@@ -12,8 +12,18 @@ credentials = service_account.Credentials.from_service_account_info(
 gc = gspread.authorize(credentials)
 
 
+#### Hello ####
+
+st.write('Enter data in spreadsheet:')
+st.write(st.secrets["private_gsheets_url"])
+
+if not st.button("Process!"):
+    st.stop()
+
+
 #### Read Google Sheets input ####
-with st.spinner(text="Reading data from spreadsheet..."):
+message = "reading data from spreadsheet..."
+with st.spinner(text=message.capitalize + '...'):
     # pbar = st.progress(20, text="Reading data from spreadsheet...")
     sheet_url = st.secrets["private_gsheets_url"]
     workbook = gc.open_by_url(sheet_url)
@@ -97,12 +107,12 @@ with st.spinner(text="Reading data from spreadsheet..."):
     # pbar.progress(100)
 
 
-st.success('Done!')
+st.success('Done' + message + '!')
 
 
 #### Solve scheduling problem ####
-
-with st.spinner(text="Solving scheduling problem..."):
+message = "solving scheduling problem"
+with st.spinner(text=message.capitalize + '...'):
     from ortools.sat.python import cp_model
     from datetime import datetime
 
@@ -155,32 +165,31 @@ with st.spinner(text="Solving scheduling problem..."):
     # dump solution into a dictionary
     solution = {}
     if status == cp_model.OPTIMAL:
+        st.balloons()
         for i in range(num_exams):
             exam = exam_names[i]
             date = dates[solver.Value(exams[i])]
             date = datetime.strptime(date, '%d/%m/%Y').date()
             solution[exam] = date
 
-    st.success('Done!')
-
-    # Print the solution
-    if len(solution) > 0:
-        sorted_items = sorted(solution.items(), key=lambda x:x[1])
-        st.write('Exam schedule:')
-        for i, (exam, date) in enumerate(sorted_items):
-            datestr = date.strftime('%d/%m/%Y')
-            # datestr = date
-            st.write(f'{datestr} : {exam}')
-        st.balloons()
-    else:
-        st.write('No solution found')
+    # # Print the solution
+    # if len(solution) > 0:
+    #     sorted_items = sorted(solution.items(), key=lambda x:x[1])
+    #     st.write('Exam schedule:')
+    #     for i, (exam, date) in enumerate(sorted_items):
+    #         datestr = date.strftime('%d/%m/%Y')
+    #         # datestr = date
+    #         st.write(f'{datestr} : {exam}')
+    # else:
+    #     st.write('No solution found')
 
 
-st.success('Done!')
+st.success('Done' + message + '!')
 
 
 #### Save solution to the Google Sheet ####
-with st.spinner(text="Writing output to spreadsheet..."):
+message = "writing output to spreadsheet"
+with st.spinner(text=message.capitalize() + '...'):
     # Open the 'Output' worksheet
     output = workbook.worksheet('Output')
 
@@ -203,4 +212,4 @@ with st.spinner(text="Writing output to spreadsheet..."):
     output.format(date_range, date_format)
 
 
-st.success('Done!')
+st.success('Done' + message + '!')

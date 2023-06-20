@@ -16,7 +16,6 @@ gc = gspread.authorize(credentials)
 
 st.write('Enter data in spreadsheet:')
 st.write(st.secrets["private_gsheets_url"])
-
 if not st.button("Process!"):
     st.stop()
 
@@ -107,7 +106,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar.progress(100)
 
 
-st.success('Done' + message + '!')
+st.success('Done ' + message + '!')
 
 
 #### Solve scheduling problem ####
@@ -184,7 +183,7 @@ with st.spinner(text=message.capitalize() + '...'):
     #     st.write('No solution found')
 
 
-st.success('Done' + message + '!')
+st.success('Done ' + message + '!')
 
 
 #### Save solution to the Google Sheet ####
@@ -212,4 +211,4 @@ with st.spinner(text=message.capitalize() + '...'):
     output.format(date_range, date_format)
 
 
-st.success('Done' + message + '!')
+st.success('Done ' + message + '!')

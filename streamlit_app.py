@@ -14,6 +14,8 @@ gc = gspread.authorize(credentials)
 
 #### Hello ####
 
+st.title('Exam scheduler 2024')
+
 st.write('Enter data in spreadsheet:')
 st.write(st.secrets["private_gsheets_url"])
 if not st.button("Process!"):

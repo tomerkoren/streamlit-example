@@ -165,11 +165,14 @@ with st.spinner(text=message.capitalize() + '...'):
     solution = {}
     if status == cp_model.OPTIMAL:
         st.balloons()
+        st.success('Found a solution!')
         for i in range(num_exams):
             exam = exam_names[i]
             date = dates[solver.Value(exams[i])]
             date = datetime.strptime(date, '%d/%m/%Y').date()
             solution[exam] = date
+    else:
+        st.error('No solution found :(')
 
     # # Print the solution
     # if len(solution) > 0:

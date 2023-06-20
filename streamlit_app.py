@@ -23,7 +23,7 @@ if not st.button("Process!"):
 
 #### Read Google Sheets input ####
 message = "reading data from spreadsheet..."
-with st.spinner(text=message.capitalize + '...'):
+with st.spinner(text=message.capitalize() + '...'):
     # pbar = st.progress(20, text="Reading data from spreadsheet...")
     sheet_url = st.secrets["private_gsheets_url"]
     workbook = gc.open_by_url(sheet_url)
@@ -112,7 +112,7 @@ st.success('Done' + message + '!')
 
 #### Solve scheduling problem ####
 message = "solving scheduling problem"
-with st.spinner(text=message.capitalize + '...'):
+with st.spinner(text=message.capitalize() + '...'):
     from ortools.sat.python import cp_model
     from datetime import datetime
 

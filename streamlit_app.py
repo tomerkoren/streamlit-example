@@ -12,5 +12,5 @@ credentials = service_account.Credentials.from_service_account_info(
 gc = gspread.authorize(credentials)
 
 sheet_url = st.secrets["private_gsheets_url"]
-sh = gc.open(sheet_url)
+sh = gc.open_by_url(sheet_url)
 st.write(sh.sheet1.get('A1'))

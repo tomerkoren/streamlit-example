@@ -97,6 +97,8 @@ with st.spinner(text="Reading data from spreadsheet..."):
     # pbar.progress(100)
 
 
+st.success('Done!')
+
 
 #### Solve scheduling problem ####
 
@@ -153,19 +155,52 @@ with st.spinner(text="Solving scheduling problem..."):
     # dump solution into a dictionary
     solution = {}
     if status == cp_model.OPTIMAL:
-        print('Exam schedule:')
         for i in range(num_exams):
             exam = exam_names[i]
             date = dates[solver.Value(exams[i])]
             date = datetime.strptime(date, '%d/%m/%Y').date()
             solution[exam] = date
 
+    st.success('Done!')
+
     # Print the solution
     if len(solution) > 0:
         sorted_items = sorted(solution.items(), key=lambda x:x[1])
+        st.write('Exam schedule:')
         for i, (exam, date) in enumerate(sorted_items):
             datestr = date.strftime('%d/%m/%Y')
             # datestr = date
             st.write(f'{datestr} : {exam}')
+        st.balloons()
     else:
         st.write('No solution found')
+
+
+st.success('Done!')
+
+
+#### Save solution to the Google Sheet ####
+with st.spinner(text="Writing output to spreadsheet..."):
+    # Open the 'Output' worksheet
+    output = workbook.worksheet('Output')
+
+    # Clear existing content in the 'Output' worksheet starting from row 3
+    start_row = 3
+    end_row = output.row_count
+    output.batch_clear([f'B{start_row}:C{end_row}'])
+
+    if len(solution) > 0:
+        sorted_items = sorted(solution.items(), key=lambda x: x[1])
+        for i, (exam, date) in enumerate(sorted_items):
+            date = date.strftime('%d/%m/%Y')
+            output.append_row([exam, date], value_input_option="USER_ENTERED")
+    else:
+        output.append_row(['', 'No solution found :('])
+
+    # Style dates in column C
+    date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
+    date_range = 'C3:C' + str(len(sorted_items) + 2)  # Range excluding header row
+    output.format(date_range, date_format)
+
+
+st.success('Done!')

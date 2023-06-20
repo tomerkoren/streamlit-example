@@ -186,9 +186,6 @@ with st.spinner(text=message.capitalize() + '...'):
     #     st.write('No solution found')
 
 
-st.success('Done ' + message + '!')
-
-
 #### Save solution to the Google Sheet ####
 message = "writing output to spreadsheet"
 with st.spinner(text=message.capitalize() + '...'):

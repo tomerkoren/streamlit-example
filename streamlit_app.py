@@ -160,7 +160,13 @@ with st.spinner(text=message.capitalize() + '...'):
     # model.Minimize(makespan)
 
     # minimize collisions
-    model.Minimize( sum([ex1==ex2 for ex1 in exams for ex2 in exams]) ) 
+    collisions = []
+    for i,j in num_exams:
+        b = model.NewBoolVar(f'{i}{j}')
+        model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
+        model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
+        collisions.append(b)
+    model.Minimize( sum(collisions) ) 
 
     # Create a solver and solve the model
     solver = cp_model.CpSolver()

@@ -125,7 +125,7 @@ with st.spinner(text=message.capitalize() + '...'):
     model = cp_model.CpModel()
 
     # Create variables
-    exams = [model.NewIntVar(1, horizon, f'exam_{i}') for i in range(num_exams)]
+    exams = [model.NewIntVar(0, horizon-1, f'exam_{i}') for i in range(num_exams)]
 
     # Add minimal gap constraints
     for (i, j), min_days in min_days_between_exams.items():

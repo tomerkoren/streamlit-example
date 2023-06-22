@@ -161,11 +161,12 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # minimize collisions
     collisions = []
-    for i,j in range(num_exams):
-        b = model.NewBoolVar(f'{i}{j}')
-        model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
-        model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
-        collisions.append(b)
+    for i in range(num_exams):
+        for j in range(i+1,num_exams):
+            b = model.NewBoolVar(f'{i}{j}')
+            model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
+            model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
+            collisions.append(b)
     model.Minimize( sum(collisions) ) 
 
     # Create a solver and solve the model

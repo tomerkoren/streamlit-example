@@ -155,9 +155,12 @@ with st.spinner(text=message.capitalize() + '...'):
 
 
     # Define the objective
-    makespan = model.NewIntVar(0, horizon, 'makespan')
-    model.AddMaxEquality(makespan, exams)
-    model.Minimize(makespan)
+    # makespan = model.NewIntVar(0, horizon, 'makespan')
+    # model.AddMaxEquality(makespan, exams)
+    # model.Minimize(makespan)
+
+    # minimize collisions
+    model.Minimize( sum([ex1==ex2 for ex1 in exams for ex2 in exams]) ) 
 
     # Create a solver and solve the model
     solver = cp_model.CpSolver()
@@ -165,7 +168,7 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # dump solution into a dictionary
     solution = {}
-    if status == cp_model.OPTIMAL:
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
         st.balloons()
         st.success('Found a solution!')
         for i in range(num_exams):

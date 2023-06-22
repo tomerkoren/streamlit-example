@@ -177,8 +177,8 @@ with st.spinner(text=message.capitalize() + '...'):
     solution = {}
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
         st.balloons()
-        message = 'optimal' if status == cp_model.OPTIMAL else 'feasible'
-        st.success(f'Found a {message} solution!')
+        message = 'an optimal' if status == cp_model.OPTIMAL else 'a feasible'
+        st.success(f'Found {message} solution!')
         for i in range(num_exams):
             exam = exam_names[i]
             date = dates[solver.Value(exams[i])]

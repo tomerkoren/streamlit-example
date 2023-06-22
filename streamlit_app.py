@@ -154,12 +154,12 @@ with st.spinner(text=message.capitalize() + '...'):
         model.Add(exams[i] == t)
 
 
-    # Define the objective
+    # Define the objective: makespan
     # makespan = model.NewIntVar(0, horizon, 'makespan')
     # model.AddMaxEquality(makespan, exams)
     # model.Minimize(makespan)
 
-    # minimize collisions
+    # Define the objective: minimize collisions
     collisions = []
     for i in range(num_exams):
         for j in range(num_exams):
@@ -177,7 +177,8 @@ with st.spinner(text=message.capitalize() + '...'):
     solution = {}
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
         st.balloons()
-        st.success('Found a solution!')
+        message = 'optimal' if status == cp_model.OPTIMAL else 'feasible'
+        st.success(f'Found a {message} solution!')
         for i in range(num_exams):
             exam = exam_names[i]
             date = dates[solver.Value(exams[i])]

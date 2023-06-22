@@ -162,7 +162,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # minimize collisions
     collisions = []
     for i in range(num_exams):
-        for j in range(i+1,num_exams):
+        for j in range(num_exams):
             b = model.NewBoolVar(f'{i}{j}')
             model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
             model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())

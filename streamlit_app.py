@@ -77,7 +77,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Extract precedence constraints
     exam_before_exam = []
     for row in data_rows:
-        exam1, exam2 = row[14], row[15]
+        exam1, exam2 = row[15], row[16]
         if exam1 and exam2:
             exam1 = exam_index[exam1]
             exam2 = exam_index[exam2]
@@ -98,7 +98,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Extract prescheduled constraints
     exam_on_date = []
     for row in data_rows:
-        exam, date = row[18], row[19]
+        exam, date = row[19], row[20]
         if exam and date:
             exam = exam_index[exam]
             date = date_index[date]

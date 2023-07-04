@@ -146,14 +146,14 @@ with st.spinner(text=message.capitalize() + '...'):
         # model.Add(exams[i] + min_days <= exams[j] or exams[j] + min_days <= exams[i])
 
     # Add ideal gap constraints
-    ideal_bools = []
+    ideal_bools = {}
     for (i, j), days in ideal_days_between_exams.items():
         # Interval for each exam
         b = model.NewBoolVar(f'idealbool_{i,j}')
         interval_i = model.NewOptionalIntervalVar(exams[i], days, exams[i] + days, b, f'idealgap_{i,j}')
         interval_j = model.NewOptionalIntervalVar(exams[j], days, exams[j] + days, b, f'idealgap_{j,i}')
         model.AddNoOverlap([interval_i, interval_j])
-        ideal_bools.append(b)
+        ideal_bools[(i,j)] = b
 
     # Add daily capacity constraints
     max_capacity = max(dates_capacity)
@@ -177,7 +177,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Define the objective
     if len(ideal_bools) > 0:
         # Satisfy as many soft constraints, if any
-        model.Minimize( sum(ideal_bools) )
+        model.Minimize( sum(ideal_bools.values()) )
     else:
         # Otherwise: minimize collisions
         collisions = []
@@ -201,22 +201,16 @@ with st.spinner(text=message.capitalize() + '...'):
     # check status
     if status not in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
         st.error('No solution found :(')
-
-        # print infeasible boolean variables index
-        st.write('SufficientAssumptionsForInfeasibility = 'f'{solver.SufficientAssumptionsForInfeasibility()}')
-    
-        # print infeasible boolean variables
-        infeasibles = solver.SufficientAssumptionsForInfeasibility()
-        for i in infeasibles:
-            st.write('Infeasible constraint: %d' % model.GetBoolVarFromProtoIndex(i))
-        
         st.stop()
-
 
     # Solution found!
     st.balloons()
     message = 'an optimal' if status == cp_model.OPTIMAL else 'a feasible'
     st.success(f'Found {message} solution!')
+
+    for (i,j),b in ideal_bools.items():
+        b = solver.Value(b)
+        st.write(f'{exam_names[i]},{exam_names[i]} => {b}')
 
     # dump solution into a dictionary
     solution = {}

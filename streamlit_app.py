@@ -150,8 +150,8 @@ with st.spinner(text=message.capitalize() + '...'):
     for (i, j), days in ideal_days_between_exams.items():
         # Interval for each exam
         b = model.NewBoolVar(f'idealbool_{i,j}')
-        interval_i = model.NewOptionalIntervalVar(exams[i], days, exams[i] + days, b, f'idealgap_{i,j}')
-        interval_j = model.NewOptionalIntervalVar(exams[j], days, exams[j] + days, b, f'idealgap_{j,i}')
+        interval_i = model.NewOptionalFixedSizeIntervalVar(exams[i], days, b, f'idealgap_{i,j}')
+        interval_j = model.NewOptionalFixedSizeIntervalVar(exams[j], days, b, f'idealgap_{j,i}')
         model.AddNoOverlap([interval_i, interval_j])
         ideal_bools[(i,j)] = b
 
@@ -211,6 +211,7 @@ with st.spinner(text=message.capitalize() + '...'):
     st.success(f'Found {message} solution!')
 
     for (i,j),b in ideal_bools.items():
+        st.write(solver.Value(b))
         if not solver.Value(b):
             st.warning(f'could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}', icon="⚠️")
 

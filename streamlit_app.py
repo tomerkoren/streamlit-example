@@ -83,13 +83,13 @@ with st.spinner(text=message.capitalize() + '...'):
             exam2 = exam_index[exam2]
             exam_before_exam.append((exam1, exam2))
 
-    exam_before_date = []
-    for row in data_rows:
-        exam, date = row[18], row[19]
-        if exam and date:
-            exam = exam_index[exam]
-            date = date_index[date]
-            exam_before_date.append((exam, date))
+    # exam_before_date = []
+    # for row in data_rows:
+    #     exam, date = row[18], row[19]
+    #     if exam and date:
+    #         exam = exam_index[exam]
+    #         date = date_index[date]
+    #         exam_before_date.append((exam, date))
 
     # st.write(exam_before_exam)
     # st.write(exam_before_date)
@@ -98,7 +98,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Extract prescheduled constraints
     exam_on_date = []
     for row in data_rows:
-        exam, date = row[22], row[23]
+        exam, date = row[18], row[19]
         if exam and date:
             exam = exam_index[exam]
             date = date_index[date]

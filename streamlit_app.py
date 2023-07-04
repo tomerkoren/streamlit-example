@@ -61,18 +61,28 @@ with st.spinner(text=message.capitalize() + '...'):
     # st.write([(date, capacity) for date, capacity in zip(dates, dates_capacity)])
     # pbar.progress(40)
 
-    # Extract gap constraints
+    # Extract minimal gap constraints
     min_days_between_exams = {}
     for row in data_rows:
-        exam1, exam2, min_days = row[9], row[10], row[11]
-        if exam1 and exam2 and min_days:
+        exam1, exam2, days = row[9], row[10], row[11]
+        if exam1 and exam2 and days:
             exam1 = exam_index[exam1]
             exam2 = exam_index[exam2]
-            min_days = int(min_days)
-            min_days_between_exams[(exam1, exam2)] = min_days
+            days = int(days)
+            min_days_between_exams[(exam1, exam2)] = days
 
     # st.write(min_days_between_exams)
     # pbar.progress(60)
+
+    # Extract ideal gap constraints
+    ideal_days_between_exams = {}
+    for row in data_rows:
+        exam1, exam2, days = row[9], row[10], row[12]
+        if exam1 and exam2 and days:
+            exam1 = exam_index[exam1]
+            exam2 = exam_index[exam2]
+            days = int(days)
+            ideal_days_between_exams[(exam1, exam2)] = days
 
     # Extract precedence constraints
     exam_before_exam = []
@@ -128,12 +138,22 @@ with st.spinner(text=message.capitalize() + '...'):
     exams = [model.NewIntVar(0, horizon-1, f'exam_{i}') for i in range(num_exams)]
 
     # Add minimal gap constraints
-    for (i, j), min_days in min_days_between_exams.items():
+    for (i, j), days in min_days_between_exams.items():
         # Interval for each exam
-        interval_i = model.NewFixedSizeIntervalVar(exams[i], min_days, f'task_{i,j}')
-        interval_j = model.NewFixedSizeIntervalVar(exams[j], min_days, f'task_{j,i}')
+        interval_i = model.NewFixedSizeIntervalVar(exams[i], days, f'mingap_{i,j}')
+        interval_j = model.NewFixedSizeIntervalVar(exams[j], days, f'mingap_{j,i}')
         model.AddNoOverlap([interval_i, interval_j])
         # model.Add(exams[i] + min_days <= exams[j] or exams[j] + min_days <= exams[i])
+
+    # Add ideal gap constraints
+    ideal_bools = []
+    for (i, j), days in ideal_days_between_exams.items():
+        # Interval for each exam
+        interval_i = model.NewFixedSizeIntervalVar(exams[i], days, f'idealgap_{i,j}')
+        interval_j = model.NewFixedSizeIntervalVar(exams[j], days, f'idealgap_{j,i}')
+        b = model.NewBoolVar(f'idealbool_{i,j}')
+        model.AddNoOverlap([interval_i, interval_j]).OnlyEnforceIf(b)
+        ideal_bools.append(b)
 
     # Add daily capacity constraints
     max_capacity = max(dates_capacity)
@@ -154,6 +174,9 @@ with st.spinner(text=message.capitalize() + '...'):
         model.Add(exams[i] == t)
 
 
+    # Add assumptions (soft constraints)
+    model.AddAssumptions(ideal_bools)
+
     # Define the objective: makespan
     # makespan = model.NewIntVar(0, horizon, 'makespan')
     # model.AddMaxEquality(makespan, exams)
@@ -167,7 +190,7 @@ with st.spinner(text=message.capitalize() + '...'):
             model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
             model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
             collisions.append(b)
-    model.Minimize( sum(collisions) ) 
+    model.Minimize( sum(collisions) )
 
     # Create a solver and solve the model
     solver = cp_model.CpSolver()
@@ -186,6 +209,15 @@ with st.spinner(text=message.capitalize() + '...'):
             solution[exam] = date
     else:
         st.error('No solution found :(')
+
+        # print infeasible boolean variables index
+        st.write('SufficientAssumptionsForInfeasibility = 'f'{solver.SufficientAssumptionsForInfeasibility()}')
+    
+        # print infeasible boolean variables
+        infeasibles = solver.SufficientAssumptionsForInfeasibility()
+        for i in infeasibles:
+            st.write('Infeasible constraint: %d' % model.GetBoolVarFromProtoIndex(i))
+
 
     # # Print the solution
     # if len(solution) > 0:

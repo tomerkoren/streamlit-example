@@ -23,7 +23,7 @@ if not st.button("Process!"):
 
 
 #### Read Google Sheets input ####
-message = "reading data from spreadsheet..."
+message = "reading data from spreadsheet"
 with st.spinner(text=message.capitalize() + '...'):
     # pbar = st.progress(20, text="Reading data from spreadsheet...")
     sheet_url = st.secrets["private_gsheets_url"]
@@ -118,7 +118,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar.progress(100)
 
 
-st.success('Done ' + message + '!')
+st.success('Done ' + message)
 
 
 #### Solve scheduling problem ####
@@ -257,6 +257,6 @@ with st.spinner(text=message.capitalize() + '...'):
         date_range = 'C3:C' + str(len(sorted_items) + 2)  # Range excluding header row
         output.format(date_range, date_format)
 
-        st.success('Done ' + message + '!')
+        st.success('Done ' + message)
     else:
         output.append_row(['', 'No solution found :('])

@@ -148,12 +148,13 @@ with st.spinner(text=message.capitalize() + '...'):
     # Add ideal gap constraints
     ideal_bools = {}
     for (i, j), days in ideal_days_between_exams.items():
-        # Interval for each exam
         b = model.NewBoolVar(f'idealbool_{i,j}')
+        ideal_bools[(i,j)] = b
+
+        # Interval for each exam
         interval_i = model.NewOptionalFixedSizeIntervalVar(exams[i], days, b, f'idealgap_{i,j}')
         interval_j = model.NewOptionalFixedSizeIntervalVar(exams[j], days, b, f'idealgap_{j,i}')
         model.AddNoOverlap([interval_i, interval_j])
-        ideal_bools[(i,j)] = b
 
     # Add daily capacity constraints
     max_capacity = max(dates_capacity)
@@ -186,7 +187,7 @@ with st.spinner(text=message.capitalize() + '...'):
     factor = num_exams**2
     if len(ideal_bools) > 0:
         # Minimize collisions, but prioritize soft constraints
-        model.Minimize( factor * sum(ideal_bools.values()) + sum(collisions) )
+        model.Minimize( -factor * sum(ideal_bools.values()) + sum(collisions) )
     else:
         # Minimize collisions
         model.Minimize( sum(collisions) )
@@ -211,7 +212,6 @@ with st.spinner(text=message.capitalize() + '...'):
     st.success(f'Found {message} solution!')
 
     for (i,j),b in ideal_bools.items():
-        st.write(solver.Value(b))
         if not solver.Value(b):
             st.warning(f'could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}', icon="⚠️")
 

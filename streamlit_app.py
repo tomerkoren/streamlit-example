@@ -175,18 +175,20 @@ with st.spinner(text=message.capitalize() + '...'):
 
 
     # Define the objective
+    collisions = []
+    for i in range(num_exams):
+        for j in range(num_exams):
+            b = model.NewBoolVar(f'{i}{j}')
+            model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
+            model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
+            collisions.append(b)
+
+    factor = num_exams**2
     if len(ideal_bools) > 0:
-        # Satisfy as many soft constraints, if any
-        model.Minimize( sum(ideal_bools.values()) )
+        # Minimize collisions, but prioritize soft constraints
+        model.Minimize( factor * sum(ideal_bools.values()) + sum(collisions) )
     else:
-        # Otherwise: minimize collisions
-        collisions = []
-        for i in range(num_exams):
-            for j in range(num_exams):
-                b = model.NewBoolVar(f'{i}{j}')
-                model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
-                model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
-                collisions.append(b)
+        # Minimize collisions
         model.Minimize( sum(collisions) )
 
     # Define the objective: makespan
@@ -210,7 +212,7 @@ with st.spinner(text=message.capitalize() + '...'):
 
     for (i,j),b in ideal_bools.items():
         if not solver.Value(b):
-            st.write(f'could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}')
+            st.warning(f'could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}', icon="⚠️")
 
     # dump solution into a dictionary
     solution = {}

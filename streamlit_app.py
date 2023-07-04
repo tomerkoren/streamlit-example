@@ -196,18 +196,8 @@ with st.spinner(text=message.capitalize() + '...'):
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
 
-    # dump solution into a dictionary
-    solution = {}
-    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        st.balloons()
-        message = 'an optimal' if status == cp_model.OPTIMAL else 'a feasible'
-        st.success(f'Found {message} solution!')
-        for i in range(num_exams):
-            exam = exam_names[i]
-            date = dates[solver.Value(exams[i])]
-            date = datetime.strptime(date, '%d/%m/%Y').date()
-            solution[exam] = date
-    else:
+    # check status
+    if status not in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
         st.error('No solution found :(')
 
         # print infeasible boolean variables index
@@ -217,7 +207,22 @@ with st.spinner(text=message.capitalize() + '...'):
         infeasibles = solver.SufficientAssumptionsForInfeasibility()
         for i in infeasibles:
             st.write('Infeasible constraint: %d' % model.GetBoolVarFromProtoIndex(i))
+        
+        st.stop()
 
+
+    # Solution found!
+    st.balloons()
+    message = 'an optimal' if status == cp_model.OPTIMAL else 'a feasible'
+    st.success(f'Found {message} solution!')
+
+    # dump solution into a dictionary
+    solution = {}
+    for i in range(num_exams):
+        exam = exam_names[i]
+        date = dates[solver.Value(exams[i])]
+        date = datetime.strptime(date, '%d/%m/%Y').date()
+        solution[exam] = date
 
     # # Print the solution
     # if len(solution) > 0:
@@ -247,13 +252,12 @@ with st.spinner(text=message.capitalize() + '...'):
         for i, (exam, date) in enumerate(sorted_items):
             date = date.strftime('%d/%m/%Y')
             output.append_row([exam, date], value_input_option="USER_ENTERED")
+        
+        # Style dates in column C
+        date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
+        date_range = 'C3:C' + str(len(sorted_items) + 2)  # Range excluding header row
+        output.format(date_range, date_format)
+
+        st.success('Done ' + message + '!')
     else:
         output.append_row(['', 'No solution found :('])
-
-    # Style dates in column C
-    date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
-    date_range = 'C3:C' + str(len(sorted_items) + 2)  # Range excluding header row
-    output.format(date_range, date_format)
-
-
-st.success('Done ' + message + '!')

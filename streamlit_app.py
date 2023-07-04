@@ -146,8 +146,8 @@ with st.spinner(text=message.capitalize() + '...'):
     # Add precedence constraints
     for (i,j) in exam_before_exam:
         model.Add(exams[i] < exams[j])
-    for (i,t) in exam_before_date:
-        model.Add(exams[i] < t)
+    # for (i,t) in exam_before_date:
+    #     model.Add(exams[i] < t)
 
     # Add prescheduling constraints
     for (i,t) in exam_on_date:

@@ -209,8 +209,8 @@ with st.spinner(text=message.capitalize() + '...'):
     st.success(f'Found {message} solution!')
 
     for (i,j),b in ideal_bools.items():
-        b = solver.Value(b)
-        st.write(f'{exam_names[i]},{exam_names[i]} => {b}')
+        if not solver.Value(b):
+            st.write(f'could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}')
 
     # dump solution into a dictionary
     solution = {}

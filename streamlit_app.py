@@ -149,10 +149,10 @@ with st.spinner(text=message.capitalize() + '...'):
     ideal_bools = []
     for (i, j), days in ideal_days_between_exams.items():
         # Interval for each exam
-        interval_i = model.NewFixedSizeIntervalVar(exams[i], days, f'idealgap_{i,j}')
-        interval_j = model.NewFixedSizeIntervalVar(exams[j], days, f'idealgap_{j,i}')
         b = model.NewBoolVar(f'idealbool_{i,j}')
-        model.AddNoOverlap([interval_i, interval_j]).OnlyEnforceIf(b)
+        interval_i = model.NewOptionalIntervalVar(exams[i], days, exams[i] + days, b, f'idealgap_{i,j}')
+        interval_j = model.NewOptionalIntervalVar(exams[j], days, exams[j] + days, b, f'idealgap_{j,i}')
+        model.AddNoOverlap([interval_i, interval_j])
         ideal_bools.append(b)
 
     # Add daily capacity constraints
@@ -174,23 +174,25 @@ with st.spinner(text=message.capitalize() + '...'):
         model.Add(exams[i] == t)
 
 
-    # Add assumptions (soft constraints)
-    model.AddAssumptions(ideal_bools)
+    # Define the objective
+    if len(ideal_bools) > 0:
+        # Satisfy as many soft constraints, if any
+        model.Minimize( sum(ideal_bools) )
+    else:
+        # Otherwise: minimize collisions
+        collisions = []
+        for i in range(num_exams):
+            for j in range(num_exams):
+                b = model.NewBoolVar(f'{i}{j}')
+                model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
+                model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
+                collisions.append(b)
+        model.Minimize( sum(collisions) )
 
     # Define the objective: makespan
     # makespan = model.NewIntVar(0, horizon, 'makespan')
     # model.AddMaxEquality(makespan, exams)
     # model.Minimize(makespan)
-
-    # Define the objective: minimize collisions
-    collisions = []
-    for i in range(num_exams):
-        for j in range(num_exams):
-            b = model.NewBoolVar(f'{i}{j}')
-            model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
-            model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
-            collisions.append(b)
-    model.Minimize( sum(collisions) )
 
     # Create a solver and solve the model
     solver = cp_model.CpSolver()

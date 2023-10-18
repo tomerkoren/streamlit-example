@@ -36,7 +36,7 @@ with st.spinner(text=message.capitalize() + '...'):
     exam_demands = []
     exam_index = {}
     for row in data_rows:
-        name, demand = row[1], row[2]
+        name, demand = row[1].strip(), row[2].strip()
         if name:
             exam_index[name] = len(exam_names)
             demand = int(demand)
@@ -51,7 +51,7 @@ with st.spinner(text=message.capitalize() + '...'):
     dates_capacity = []
     date_index = {}
     for row in data_rows:
-        date, capacity = row[5], row[6]
+        date, capacity = row[5].strip(), row[6].strip()
         if date:
             capacity = int(capacity) if capacity else 0
             date_index[date] = len(dates)
@@ -64,7 +64,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Extract minimal gap constraints
     min_days_between_exams = {}
     for row in data_rows:
-        exam1, exam2, days = row[9], row[10], row[11]
+        exam1, exam2, days = row[9].strip(), row[10].strip(), row[11].strip()
         if exam1 and exam2 and days:
             exam1 = exam_index[exam1]
             exam2 = exam_index[exam2]
@@ -77,7 +77,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Extract ideal gap constraints
     ideal_days_between_exams = {}
     for row in data_rows:
-        exam1, exam2, days = row[9], row[10], row[12]
+        exam1, exam2, days = row[9].strip(), row[10].strip(), row[12].strip()
         if exam1 and exam2 and days:
             exam1 = exam_index[exam1]
             exam2 = exam_index[exam2]
@@ -87,7 +87,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Extract precedence constraints
     exam_before_exam = []
     for row in data_rows:
-        exam1, exam2 = row[15], row[16]
+        exam1, exam2 = row[15].strip(), row[16].strip()
         if exam1 and exam2:
             exam1 = exam_index[exam1]
             exam2 = exam_index[exam2]
@@ -108,7 +108,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Extract prescheduled constraints
     exam_on_date = []
     for row in data_rows:
-        exam, date = row[19], row[20]
+        exam, date = row[19].strip(), row[20].strip()
         if exam and date:
             exam = exam_index[exam]
             date = date_index[date]

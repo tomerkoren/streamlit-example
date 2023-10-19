@@ -5,7 +5,7 @@ from google.oauth2 import service_account
 
 #### function defs ####
 def get_matching(pattern, names, index):
-    return [index[name] for name in names if re.match(pattern1,name)]
+    return [index[name] for name in names if re.match(pattern,name)]
 
 def get_matching_pairs(pattern1, pattern2, names, index):
     matches = [name for name in names if re.match(pattern1,name)]

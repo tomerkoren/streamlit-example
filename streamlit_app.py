@@ -8,12 +8,11 @@ def get_matching(pattern, names, index):
     return [index[name] for name in names if re.match(pattern,name)]
 
 def get_matching_pairs(pattern1, pattern2, names, index):
-    matches = [name for name in names if re.match(pattern1,name)]
-    subs = [re.sub(pattern1,pattern2,name) for name in matches]
+    matches = get_matching(pattern1,name,index)
+    subs = [re.sub(pattern1,pattern2,names[i]) for i in matches]
 
     pairs = []
-    for name1,sub in zip(matches,subs):
-        i1 = index[name1]
+    for i1,sub in zip(matches,subs):
         for i2 in get_matching(sub,names,index):
             if i1 != i2: pairs.append((i1,i2))
     return pairs

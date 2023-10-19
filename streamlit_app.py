@@ -1,6 +1,24 @@
 import streamlit as st
 import gspread
+import re
 from google.oauth2 import service_account
+
+#### function defs ####
+def get_matching(pattern, names, index):
+    return [index.get(name) for name in names if re.match(pattern1,name)]
+    # return [i for i in matches if i is not None]
+
+def get_matching_pairs(pattern1, pattern2, names, index):
+    matches = [name for name in names if re.match(pattern1,name)]
+    subs = [re.sub(pattern1,pattern2,name) for name in matches]
+
+    pairs = []
+    for match,sub in zip(matches,subs):
+        i1 = index.get(match)
+        i2 = index.get(sub)
+        if i1 and i2 and i1 != i2: pairs.append((i1,i2))
+    return pairs
+
 
 #### Authorize and connect to Sheets ####
 credentials = service_account.Credentials.from_service_account_info(
@@ -61,36 +79,37 @@ with st.spinner(text=message.capitalize() + '...'):
     # st.write([(date, capacity) for date, capacity in zip(dates, dates_capacity)])
     # pbar.progress(40)
 
-    # Extract minimal gap constraints
+    # Extract minimal and ideal gap constraints
     min_days_between_exams = {}
+    ideal_days_between_exams = {}
     for row in data_rows:
-        exam1, exam2, days = row[9].strip(), row[10].strip(), row[11].strip()
-        if exam1 and exam2 and days:
-            exam1 = exam_index[exam1]
-            exam2 = exam_index[exam2]
-            days = int(days)
-            min_days_between_exams[(exam1, exam2)] = days
+        pattern1, pattern2, min_days, ideal_days = row[9].strip(), row[10].strip(), row[11].strip(), row[12].strip()
+
+        if not (pattern1 and pattern2): continue
+        pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
+
+        if min_days:
+            min_days = int(min_days)
+            for (exam1, exam2) in pairs:
+                min_days_between_exams[(exam1, exam2)] = min_days
+        
+        if ideal_days:
+            ideal_days = int(ideal_days)
+            for (exam1, exam2) in pairs:
+                ideal_days_between_exams[(exam1, exam2)] = ideal_days
+
 
     # st.write(min_days_between_exams)
     # pbar.progress(60)
 
-    # Extract ideal gap constraints
-    ideal_days_between_exams = {}
-    for row in data_rows:
-        exam1, exam2, days = row[9].strip(), row[10].strip(), row[12].strip()
-        if exam1 and exam2 and days:
-            exam1 = exam_index[exam1]
-            exam2 = exam_index[exam2]
-            days = int(days)
-            ideal_days_between_exams[(exam1, exam2)] = days
-
     # Extract precedence constraints
     exam_before_exam = []
     for row in data_rows:
-        exam1, exam2 = row[15].strip(), row[16].strip()
-        if exam1 and exam2:
-            exam1 = exam_index[exam1]
-            exam2 = exam_index[exam2]
+        pattern1, pattern2 = row[15].strip(), row[16].strip()
+        if not (pattern1 and pattern2): continue
+        
+        pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
+        for (exam1, exam2) in pairs:
             exam_before_exam.append((exam1, exam2))
 
     # exam_before_date = []
@@ -108,10 +127,13 @@ with st.spinner(text=message.capitalize() + '...'):
     # Extract prescheduled constraints
     exam_on_date = []
     for row in data_rows:
-        exam, date = row[19].strip(), row[20].strip()
-        if exam and date:
-            exam = exam_index[exam]
-            date = date_index[date]
+        pattern, date = row[19].strip(), row[20].strip()
+        if not (exam and date): continue
+
+        matches = get_matching(pattern,exam_names,exam_index)
+        date = date_index[date]
+
+        for exam in matches: 
             exam_on_date.append((exam, date))
 
     # st.write(exam_on_date)

@@ -8,6 +8,7 @@ def get_matching(pattern, names, index):
     return [index[name] for name in names if re.match(pattern,name)]
 
 def get_matching_pairs(pattern1, pattern2, names, index):
+    pattern1 = pattern1 + '.*'  # match prefix, consume entire expression
     matches = get_matching(pattern1,names,index)
     subs = [re.sub(pattern1,pattern2,names[i]) for i in matches]
 

@@ -127,7 +127,7 @@ with st.spinner(text=message.capitalize() + '...'):
     exam_on_date = []
     for row in data_rows:
         pattern, date = row[19].strip(), row[20].strip()
-        if not (exam and date): continue
+        if not (pattern and date): continue
 
         matches = get_matching(pattern,exam_names,exam_index)
         date = date_index[date]

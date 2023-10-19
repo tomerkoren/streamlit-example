@@ -5,18 +5,17 @@ from google.oauth2 import service_account
 
 #### function defs ####
 def get_matching(pattern, names, index):
-    return [index.get(name) for name in names if re.match(pattern1,name)]
-    # return [i for i in matches if i is not None]
+    return [index[name] for name in names if re.match(pattern1,name)]
 
 def get_matching_pairs(pattern1, pattern2, names, index):
     matches = [name for name in names if re.match(pattern1,name)]
     subs = [re.sub(pattern1,pattern2,name) for name in matches]
 
     pairs = []
-    for match,sub in zip(matches,subs):
-        i1 = index.get(match)
-        i2 = index.get(sub)
-        if i1 and i2 and i1 != i2: pairs.append((i1,i2))
+    for name1,sub in zip(matches,subs):
+        i1 = index[name1]
+        for i2 in get_matching(sub,names,index):
+            if i1 != i2: pairs.append((i1,i2))
     return pairs
 
 

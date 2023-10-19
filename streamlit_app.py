@@ -86,7 +86,7 @@ with st.spinner(text=message.capitalize() + '...'):
 
         if not (pattern1 and pattern2): continue
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
-        print(f'found {len(pairs)} matching pairs for gap constraints')
+        st.write(f'found {len(pairs)} matching pairs for gap constraints')
 
         if min_days:
             min_days = int(min_days)
@@ -109,7 +109,7 @@ with st.spinner(text=message.capitalize() + '...'):
         if not (pattern1 and pattern2): continue
         
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
-        print(f'found {len(pairs)} matching pairs for precedence constraints')
+        st.write(f'found {len(pairs)} matching pairs for precedence constraints')
 
         for (exam1, exam2) in pairs:
             exam_before_exam.append((exam1, exam2))
@@ -133,7 +133,7 @@ with st.spinner(text=message.capitalize() + '...'):
         if not (pattern and date): continue
 
         matches = get_matching(pattern,exam_names,exam_index)
-        print(f'found {len(matches)} matches for prescheduled constraints')
+        st.write(f'found {len(matches)} matches for prescheduled constraints')
         date = date_index[date]
 
         for exam in matches: 

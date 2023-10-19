@@ -85,7 +85,7 @@ with st.spinner(text=message.capitalize() + '...'):
 
         if not (pattern1 and pattern2): continue
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
-        st.write(f'found {len(pairs)} matching pairs for gap constraints')
+        st.write(f'found matching pairs for gap constraints: {pairs}')
 
         if min_days:
             min_days = int(min_days)

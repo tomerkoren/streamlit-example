@@ -71,7 +71,7 @@ with st.spinner(text=message.capitalize() + '...'):
     dates = []
     dates_capacity = []
     date_index = {}
-    for row in data_rows:
+    for row_i, row in enumerate(data_rows):
         date, capacity = row[5].strip(), row[6].strip()
         if date:
             capacity = int(capacity) if capacity else 0
@@ -85,14 +85,16 @@ with st.spinner(text=message.capitalize() + '...'):
     # Extract minimal and ideal gap constraints
     min_days_between_exams = {}
     ideal_days_between_exams = {}
-    for row in data_rows:
+    for row_i, row in enumerate(data_rows):
         pattern1, pattern2, min_days, ideal_days = row[9].strip(), row[10].strip(), row[11].strip(), row[12].strip()
         if not (pattern1 and pattern2): continue
 
         pattern1 = preprocess_pattern(pattern1)
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
-        st.write(f'found matching pairs for gap constraints: {pairs}')
+        if len(pairs) == 0:
+            st.warning(f'Constraint in column 10, row {row_i+2} yeilded 0 matches.')
+        # st.write(f'found matching pairs for gap constraints: {pairs}')
 
         if min_days:
             min_days = int(min_days)
@@ -110,20 +112,22 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # Extract precedence constraints
     exam_before_exam = []
-    for row in data_rows:
+    for row_i, row in enumerate(data_rows):
         pattern1, pattern2 = row[15].strip(), row[16].strip()
         if not (pattern1 and pattern2): continue
         
         pattern1 = preprocess_pattern(pattern1)
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
-        st.write(f'found {len(pairs)} matching pairs for precedence constraints')
+        if len(pairs) == 0:
+            st.warning(f'Constraint in column 16, row {row_i+2} yeilded 0 matches.')
+        # st.write(f'found {len(pairs)} matching pairs for precedence constraints')
 
         for (exam1, exam2) in pairs:
             exam_before_exam.append((exam1, exam2))
 
     # exam_before_date = []
-    # for row in data_rows:
+    # for row_i, row in enumerate(data_rows):
     #     exam, date = row[18], row[19]
     #     if exam and date:
     #         exam = exam_index[exam]
@@ -136,12 +140,14 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # Extract prescheduled constraints
     exam_on_date = []
-    for row in data_rows:
+    for row_i, row in enumerate(data_rows):
         pattern, date = row[19].strip(), row[20].strip()
         if not (pattern and date): continue
 
         pattern = preprocess_pattern(pattern)
         matches = get_matching(pattern,exam_names,exam_index)
+        if len(matches) == 0:
+            st.warning(f'Constraint in column 20, row {row_i+2} yeilded 0 matches.')
         # st.write(f'found {len(matches)} matches for prescheduled constraints')
         date = date_index[date]
 

@@ -4,11 +4,15 @@ import re
 from google.oauth2 import service_account
 
 #### regex helper functions ####
+def preprocess_pattern(pattern):
+    # use '#' as a wildcard character (in addition to '.')
+    pattern = pattern.replace('#', '.')
+    return pattern
+
 def get_matching(pattern, names, index):
-    return [index[name] for name in names if re.match(pattern,name)]
+    return [index[name] for name in names if re.fullmatch(pattern,name)]
 
 def get_matching_pairs(pattern1, pattern2, names, index):
-    pattern1 = pattern1 + '.*'  # match prefix, consume entire expression
     matches = get_matching(pattern1,names,index)
     subs = [re.sub(pattern1,pattern2,names[i]) for i in matches]
 
@@ -31,7 +35,7 @@ gc = gspread.authorize(credentials)
 
 #### Hello ####
 
-st.title('Exam scheduler 2024')
+st.title('Exam scheduler 2024a')
 
 st.write('Enter data in spreadsheet:')
 st.write(st.secrets["private_gsheets_url"])
@@ -83,8 +87,10 @@ with st.spinner(text=message.capitalize() + '...'):
     ideal_days_between_exams = {}
     for row in data_rows:
         pattern1, pattern2, min_days, ideal_days = row[9].strip(), row[10].strip(), row[11].strip(), row[12].strip()
-
         if not (pattern1 and pattern2): continue
+
+        pattern1 = preprocess_pattern(pattern1)
+        pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         # st.write(f'found matching pairs for gap constraints: {pairs}')
 
@@ -108,6 +114,8 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern1, pattern2 = row[15].strip(), row[16].strip()
         if not (pattern1 and pattern2): continue
         
+        pattern1 = preprocess_pattern(pattern1)
+        pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         # st.write(f'found {len(pairs)} matching pairs for precedence constraints')
 
@@ -132,6 +140,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern, date = row[19].strip(), row[20].strip()
         if not (pattern and date): continue
 
+        pattern = preprocess_pattern(pattern)
         matches = get_matching(pattern,exam_names,exam_index)
         # st.write(f'found {len(matches)} matches for prescheduled constraints')
         date = date_index[date]

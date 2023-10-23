@@ -92,7 +92,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern1 = preprocess_pattern(pattern1)
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
-        # st.write(f'found matching pairs for gap constraints: {pairs}')
+        st.write(f'found matching pairs for gap constraints: {pairs}')
 
         if min_days:
             min_days = int(min_days)
@@ -117,7 +117,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern1 = preprocess_pattern(pattern1)
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
-        # st.write(f'found {len(pairs)} matching pairs for precedence constraints')
+        st.write(f'found {len(pairs)} matching pairs for precedence constraints')
 
         for (exam1, exam2) in pairs:
             exam_before_exam.append((exam1, exam2))

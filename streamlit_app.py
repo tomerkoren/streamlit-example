@@ -93,7 +93,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         if len(pairs) == 0:
-            st.warning(f'Constraint in column 10, row {row_i+2} yeilded 0 matches.')
+            st.warning(f'Constraint in column 10, row {row_i+3} yeilded 0 matches', icon="⚠️")
         # st.write(f'found matching pairs for gap constraints: {pairs}')
 
         if min_days:
@@ -120,7 +120,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         if len(pairs) == 0:
-            st.warning(f'Constraint in column 16, row {row_i+2} yeilded 0 matches.')
+            st.warning(f'Constraint in column 16, row {row_i+3} yeilded 0 matches', icon="⚠️")
         # st.write(f'found {len(pairs)} matching pairs for precedence constraints')
 
         for (exam1, exam2) in pairs:
@@ -147,7 +147,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern = preprocess_pattern(pattern)
         matches = get_matching(pattern,exam_names,exam_index)
         if len(matches) == 0:
-            st.warning(f'Constraint in column 20, row {row_i+2} yeilded 0 matches.')
+            st.warning(f'Constraint in column 20, row {row_i+3} yeilded 0 matches', icon="⚠️")
         # st.write(f'found {len(matches)} matches for prescheduled constraints')
         date = date_index[date]
 
@@ -253,7 +253,7 @@ with st.spinner(text=message.capitalize() + '...'):
 
     for (i,j),b in ideal_bools.items():
         if not solver.Value(b):
-            st.warning(f'could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}', icon="⚠️")
+            st.warning(f'Could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}', icon="⚠️")
 
     # dump solution into a dictionary
     solution = {}

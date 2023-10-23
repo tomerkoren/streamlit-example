@@ -1,7 +1,7 @@
 import streamlit as st
 import gspread
-import xlsxwriter
 import re
+from openpyxl.utils.cell import get_column_letter
 from google.oauth2 import service_account
 
 #### regex helper functions ####
@@ -94,7 +94,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         if len(pairs) == 0:
-            st.warning(f'Constraint in column 10, row {xlsxwriter.utility.xl_col_to_name(row_i+3)} yielded 0 matches', icon="⚠️")
+            st.warning(f'Constraint in column 10, row {get_column_letter(row_i+3)} yielded 0 matches', icon="⚠️")
         # st.write(f'found matching pairs for gap constraints: {pairs}')
 
         if min_days:
@@ -121,7 +121,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         if len(pairs) == 0:
-            st.warning(f'Constraint in column 16, row {xlsxwriter.utility.xl_col_to_name(row_i+3)} yielded 0 matches', icon="⚠️")
+            st.warning(f'Constraint in column 16, row {get_column_letter(row_i+3)} yielded 0 matches', icon="⚠️")
         # st.write(f'found {len(pairs)} matching pairs for precedence constraints')
 
         for (exam1, exam2) in pairs:
@@ -148,7 +148,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern = preprocess_pattern(pattern)
         matches = get_matching(pattern,exam_names,exam_index)
         if len(matches) == 0:
-            st.warning(f'Constraint in column 20, row {xlsxwriter.utility.xl_col_to_name(row_i+3)} yielded 0 matches', icon="⚠️")
+            st.warning(f'Constraint in column 20, row {get_column_letter(row_i+3)} yielded 0 matches', icon="⚠️")
         # st.write(f'found {len(matches)} matches for prescheduled constraints')
         date = date_index[date]
 

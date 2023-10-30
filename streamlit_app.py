@@ -224,27 +224,27 @@ with st.spinner(text=message.capitalize() + '...'):
         model.Add(exams[i] == t)
 
 
-    # Define the objective
-    collisions = []
-    for i in range(num_exams):
-        for j in range(num_exams):
-            b = model.NewBoolVar(f'{i}{j}')
-            model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
-            model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
-            collisions.append(b)
+    # # Define the objective: minimize collisions
+    # collisions = []
+    # for i in range(num_exams):
+    #     for j in range(num_exams):
+    #         b = model.NewBoolVar(f'{i}{j}')
+    #         model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
+    #         model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
+    #         collisions.append(b)
 
-    factor = num_exams**2
-    if len(ideal_bools) > 0:
-        # Minimize collisions, but prioritize soft constraints
-        model.Minimize( -factor * sum(ideal_bools.values()) + sum(collisions) )
-    else:
-        # Minimize collisions
-        model.Minimize( sum(collisions) )
+    # factor = num_exams**2
+    # if len(ideal_bools) > 0:
+    #     # Minimize collisions, but prioritize soft constraints
+    #     model.Minimize( -factor * sum(ideal_bools.values()) + sum(collisions) )
+    # else:
+    #     # Minimize collisions
+    #     model.Minimize( sum(collisions) )
 
     # Define the objective: makespan
-    # makespan = model.NewIntVar(0, horizon, 'makespan')
-    # model.AddMaxEquality(makespan, exams)
-    # model.Minimize(makespan)
+    makespan = model.NewIntVar(0, horizon, 'makespan')
+    model.AddMaxEquality(makespan, exams)
+    model.Minimize(makespan)
 
     # Create a solver and solve the model
     solver = cp_model.CpSolver()

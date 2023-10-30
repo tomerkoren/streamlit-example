@@ -5,7 +5,14 @@ from openpyxl.utils.cell import get_column_letter
 from google.oauth2 import service_account
 
 #### regex helper functions ####
+def preprocess_name(name):
+    # strip consecutive whitespaces
+    name = re.sub(' +', ' ', name)
+    return name
+
 def preprocess_pattern(pattern):
+    # strip consecutive whitespaces
+    pattern = re.sub(' +', ' ', pattern)
     # use '#' as a wildcard character (in addition to '.')
     pattern = pattern.replace('#', '.')
     return pattern
@@ -59,6 +66,7 @@ with st.spinner(text=message.capitalize() + '...'):
     exam_index = {}
     for row in data_rows:
         name, demand = row[1].strip(), row[2].strip()
+        name = preprocess_name(name)
         if name:
             exam_index[name] = len(exam_names)
             demand = int(demand)

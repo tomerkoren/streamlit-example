@@ -297,9 +297,11 @@ with st.spinner(text=message.capitalize() + '...'):
 
     if len(solution) > 0:
         sorted_items = sorted(solution.items(), key=lambda x: x[1])
+        data = []
         for i, (exam, date) in enumerate(sorted_items):
             date = date.strftime('%d/%m/%Y')
-            output.append_row([exam, date], value_input_option="USER_ENTERED")
+            data.append([exam, date])
+        output.append_rows(data, value_input_option="USER_ENTERED")
         
         # Style dates in column C
         date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}

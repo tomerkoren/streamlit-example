@@ -241,10 +241,13 @@ with st.spinner(text=message.capitalize() + '...'):
     #     # Minimize collisions
     #     model.Minimize( sum(collisions) )
 
-    # Define the objective: makespan
-    makespan = model.NewIntVar(0, horizon, 'makespan')
-    model.AddMaxEquality(makespan, exams)
-    model.Minimize(makespan)
+    # Define the objective: maximize soft constraints satisfaction
+    model.Maximize( sum(ideal_bools.values()) )
+
+    # # Define the objective: makespan
+    # makespan = model.NewIntVar(0, horizon, 'makespan')
+    # model.AddMaxEquality(makespan, exams)
+    # model.Minimize(makespan)
 
     # Create a solver and solve the model
     solver = cp_model.CpSolver()

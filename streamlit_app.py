@@ -105,13 +105,14 @@ with st.spinner(text=message.capitalize() + '...'):
             st.warning(f'Constraint in column {get_column_letter(10)}, row {row_i+3} yielded 0 matches', icon="⚠️")
         # st.write(f'found matching pairs for gap constraints: {pairs}')
 
-        if min_days:
-            min_days = int(min_days)
+        min_days = int(min_days) if min_days else 0
+        ideal_days = int(ideal_days) if ideal_days else 0
+
+        if min_days > 0:
             for (exam1, exam2) in pairs:
                 min_days_between_exams[(exam1, exam2)] = min_days
         
-        if ideal_days:
-            ideal_days = int(ideal_days)
+        if ideal_days > min_days:
             for (exam1, exam2) in pairs:
                 ideal_days_between_exams[(exam1, exam2)] = ideal_days
 

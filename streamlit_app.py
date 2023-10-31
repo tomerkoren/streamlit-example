@@ -112,10 +112,23 @@ with st.spinner(text=message.capitalize() + '...'):
             for (exam1, exam2) in pairs:
                 min_days_between_exams[(exam1, exam2)] = min_days
         
-        if ideal_days > min_days:
+        if ideal_days > 0:
             for (exam1, exam2) in pairs:
                 ideal_days_between_exams[(exam1, exam2)] = ideal_days
 
+    # Filter redundant constraints
+    for (pair,min_days) in min_days_between_exams.items():
+        if min_days == 0: 
+            del min_days_between_exams[pair]
+    
+    for (pair,ideal_days) in ideal_days_between_exams.items():
+        if ideal_days == 0: 
+            del ideal_days_between_exams[pair]
+
+    for (pair, min_days) in min_days_between_exams.items():
+        ideal_days = ideal_days_between_exams.get(pair)
+        if ideal_days and ideal_days <= min_days: 
+            del ideal_days_between_exams[pair]
 
     # st.write(min_days_between_exams)
     # pbar.progress(60)

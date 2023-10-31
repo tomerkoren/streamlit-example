@@ -278,8 +278,8 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # Solution found!
     st.balloons()
-    message = 'an optimal' if status == cp_model.OPTIMAL else 'a feasible'
-    st.success(f'Found {message} solution!')
+    message = 'an OPTIMAL' if status == cp_model.OPTIMAL else 'a FEASIBLE'
+    st.success(f'Found {message} solution')
 
     for (i,j),b in ideal_bools.items():
         if not solver.Value(b):

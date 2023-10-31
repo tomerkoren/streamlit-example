@@ -265,6 +265,10 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # Create a solver and solve the model
     solver = cp_model.CpSolver()
+    # Sets a time limit
+    solver.parameters.max_time_in_seconds = 20.0
+
+    # Solve!
     status = solver.Solve(model)
 
     # check status

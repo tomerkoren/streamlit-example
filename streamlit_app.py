@@ -109,8 +109,14 @@ with st.spinner(text=message.capitalize() + '...'):
         ideal_days = int(ideal_days) if ideal_days else 0
 
         for (exam1, exam2) in pairs:
-            min_days_between_exams[(exam1, exam2)] = min_days
-            ideal_days_between_exams[(exam1, exam2)] = ideal_days
+            # ensure that exam1 < exam2
+            if exam1 == exam2: continue
+            if exam1 > exam2: (exam1, exam2) = (exam2, exam1)
+
+            if min_days > 0:
+                min_days_between_exams[(exam1, exam2)] = min_days
+            if ideal_days > 0:
+                ideal_days_between_exams[(exam1, exam2)] = ideal_days
 
     # Filter redundant constraints
     for (pair, min_days) in min_days_between_exams.items():

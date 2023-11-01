@@ -2,6 +2,8 @@ import streamlit as st
 import gspread
 import re
 from openpyxl.utils.cell import get_column_letter
+from ortools.sat.python import cp_model
+from datetime import datetime
 from google.oauth2 import service_account
 
 #### regex helper functions ####
@@ -57,10 +59,11 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar = st.progress(20, text="Reading data from spreadsheet...")
     sheet_url = st.secrets["private_gsheets_url"]
     workbook = gc.open_by_url(sheet_url)
-    worksheet = workbook.worksheet('Input')
-    data_rows = worksheet.get_all_values()[2:]  # Exclude header rows
 
     # Extract exams
+    worksheet = workbook.worksheet('בחינות')
+    data_rows = worksheet.get_all_values()[2:]
+
     exam_names = []
     exam_demands = []
     exam_index = {}
@@ -77,11 +80,14 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar.progress(20)
 
     # Extract dates
+    worksheet = workbook.worksheet('תאריכים')
+    data_rows = worksheet.get_all_values()[2:]
+
     dates = []
     dates_capacity = []
     date_index = {}
     for row_i, row in enumerate(data_rows):
-        date, capacity = row[5].strip(), row[6].strip()
+        date, capacity = row[1].strip(), row[2].strip()
         if date:
             capacity = int(capacity) if capacity else 0
             date_index[date] = len(dates)
@@ -92,10 +98,13 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar.progress(40)
 
     # Extract minimal and ideal gap constraints
+    worksheet = workbook.worksheet('מרווחים')
+    data_rows = worksheet.get_all_values()[2:]
+
     min_days_between_exams = {}
     ideal_days_between_exams = {}
     for row_i, row in enumerate(data_rows):
-        pattern1, pattern2, min_days, ideal_days = row[9].strip(), row[10].strip(), row[11].strip(), row[12].strip()
+        pattern1, pattern2, min_days, ideal_days = row[1].strip(), row[2].strip(), row[3].strip(), row[4].strip()
         if not (pattern1 and pattern2): continue
 
         pattern1 = preprocess_pattern(pattern1)
@@ -129,9 +138,12 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar.progress(60)
 
     # Extract precedence constraints
+    worksheet = workbook.worksheet('קדימויות')
+    data_rows = worksheet.get_all_values()[2:]
+
     exam_before_exam = []
     for row_i, row in enumerate(data_rows):
-        pattern1, pattern2 = row[15].strip(), row[16].strip()
+        pattern1, pattern2 = row[1].strip(), row[2].strip()
         if not (pattern1 and pattern2): continue
         
         pattern1 = preprocess_pattern(pattern1)
@@ -157,9 +169,12 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar.progress(80)
 
     # Extract prescheduled constraints
+    worksheet = workbook.worksheet('קיבועים')
+    data_rows = worksheet.get_all_values()[2:]
+
     exam_on_date = []
     for row_i, row in enumerate(data_rows):
-        pattern, date = row[19].strip(), row[20].strip()
+        pattern, date = row[1].strip(), row[2].strip()
         if not (pattern and date): continue
 
         pattern = preprocess_pattern(pattern)
@@ -183,9 +198,6 @@ st.success('Done ' + message)
 time_limit = 20.0
 message = f'solving scheduling problem (limiting to {time_limit}s)'
 with st.spinner(text=message.capitalize() + '...'):
-    from ortools.sat.python import cp_model
-    from datetime import datetime
-
     # Define the number of exams and the number of days
     num_exams = len(exam_names)
     horizon = len(dates)
@@ -309,7 +321,7 @@ with st.spinner(text=message.capitalize() + '...'):
 message = "writing output to spreadsheet"
 with st.spinner(text=message.capitalize() + '...'):
     # Open the 'Output' worksheet
-    output = workbook.worksheet('Output')
+    output = workbook.worksheet('שיבוץ')
 
     # Clear existing content in the 'Output' worksheet starting from row 3
     start_row = 3

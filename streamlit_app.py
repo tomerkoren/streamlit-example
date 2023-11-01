@@ -118,14 +118,12 @@ with st.spinner(text=message.capitalize() + '...'):
         ideal_days = int(ideal_days) if ideal_days else 0
 
         for (exam1, exam2) in pairs:
-            # ensure that exam1 < exam2
+            # ensure that exam1 < exam2 to avoid duplicates
             if exam1 == exam2: continue
             if exam1 > exam2: (exam1, exam2) = (exam2, exam1)
-
-            if min_days > 0:
-                min_days_between_exams[(exam1, exam2)] = min_days
-            if ideal_days > 0:
-                ideal_days_between_exams[(exam1, exam2)] = ideal_days
+            
+            min_days_between_exams[(exam1, exam2)] = min_days
+            ideal_days_between_exams[(exam1, exam2)] = ideal_days
 
     # Filter redundant constraints
     for (pair, min_days) in min_days_between_exams.items():
@@ -210,6 +208,7 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # Add minimal gap constraints
     for (i, j), days in min_days_between_exams.items():
+        # ignore disabled constraints
         if days < 1: continue
 
         # Interval for each exam
@@ -221,6 +220,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Add ideal gap constraints
     ideal_bools = {}
     for (i, j), days in ideal_days_between_exams.items():
+        # ignore disabled constraints
         if days < 1: continue
 
         b = model.NewBoolVar(f'idealbool_{i,j}')

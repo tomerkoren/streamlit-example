@@ -268,7 +268,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # check status
     if status not in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
         st.error('No solution found :(')
-        st.stop()
+        # st.stop()
 
     # Solution found!
     st.balloons()

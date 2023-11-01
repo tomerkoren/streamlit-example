@@ -108,27 +108,16 @@ with st.spinner(text=message.capitalize() + '...'):
         min_days = int(min_days) if min_days else 0
         ideal_days = int(ideal_days) if ideal_days else 0
 
-        if min_days > 0:
-            for (exam1, exam2) in pairs:
-                min_days_between_exams[(exam1, exam2)] = min_days
-        
-        if ideal_days > 0:
-            for (exam1, exam2) in pairs:
-                ideal_days_between_exams[(exam1, exam2)] = ideal_days
+        for (exam1, exam2) in pairs:
+            min_days_between_exams[(exam1, exam2)] = min_days
+            ideal_days_between_exams[(exam1, exam2)] = ideal_days
 
     # Filter redundant constraints
-    for (pair,min_days) in min_days_between_exams.items():
-        if min_days == 0: 
-            del min_days_between_exams[pair]
-    
-    for (pair,ideal_days) in ideal_days_between_exams.items():
-        if ideal_days == 0: 
-            del ideal_days_between_exams[pair]
-
     for (pair, min_days) in min_days_between_exams.items():
         ideal_days = ideal_days_between_exams.get(pair)
         if ideal_days and ideal_days <= min_days: 
-            del ideal_days_between_exams[pair]
+            # disable constraint
+            ideal_days_between_exams[pair] = 0
 
     # st.write(min_days_between_exams)
     # pbar.progress(60)
@@ -185,7 +174,8 @@ st.success('Done ' + message)
 
 
 #### Solve scheduling problem ####
-message = "solving scheduling problem"
+time_limit = 20.0
+message = f'solving scheduling problem (limiting to {time_limit}s)'
 with st.spinner(text=message.capitalize() + '...'):
     from ortools.sat.python import cp_model
     from datetime import datetime
@@ -202,6 +192,8 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # Add minimal gap constraints
     for (i, j), days in min_days_between_exams.items():
+        if days < 1: continue
+
         # Interval for each exam
         interval_i = model.NewFixedSizeIntervalVar(exams[i], days, f'mingap_{i,j}')
         interval_j = model.NewFixedSizeIntervalVar(exams[j], days, f'mingap_{j,i}')
@@ -211,6 +203,8 @@ with st.spinner(text=message.capitalize() + '...'):
     # Add ideal gap constraints
     ideal_bools = {}
     for (i, j), days in ideal_days_between_exams.items():
+        if days < 1: continue
+
         b = model.NewBoolVar(f'idealbool_{i,j}')
         ideal_bools[(i,j)] = b
 
@@ -266,7 +260,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Create a solver and solve the model
     solver = cp_model.CpSolver()
     # Sets a time limit
-    solver.parameters.max_time_in_seconds = 20.0
+    solver.parameters.max_time_in_seconds = time_limit
 
     # Solve!
     status = solver.Solve(model)

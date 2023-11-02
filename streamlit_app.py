@@ -341,7 +341,7 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # Dump failed soft constraints into columns E:H
     output.batch_update({
-        'range': f'B{start_row}:H{end_row}',
+        'range': f'E{start_row}:H{end_row}',
         'values': failed_list,
         }, 
         value_input_option="USER_ENTERED")

@@ -282,12 +282,10 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # Solve!
     status = solver.Solve(model)
-
     # check status
-    if status not in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
-        st.error('No solution found :(')
-        st.stop()
+    success = (status not in [cp_model.OPTIMAL, cp_model.FEASIBLE])
 
+if success:
     # Solution found!
     st.balloons()
     message = 'an OPTIMAL' if status == cp_model.OPTIMAL else 'a FEASIBLE'
@@ -304,18 +302,18 @@ with st.spinner(text=message.capitalize() + '...'):
         date = dates[solver.Value(exams[i])]
         date = datetime.strptime(date, '%d/%m/%Y').date()
         solution[exam] = date
-
-    # # Print the solution
-    # if len(solution) > 0:
-    #     sorted_items = sorted(solution.items(), key=lambda x:x[1])
-    #     st.write('Exam schedule:')
-    #     for i, (exam, date) in enumerate(sorted_items):
-    #         datestr = date.strftime('%d/%m/%Y')
-    #         # datestr = date
-    #         st.write(f'{datestr} : {exam}')
-    # else:
-    #     st.write('No solution found')
-
+    
+    # dump failed soft constraints into a list
+    failed = []
+    for (i,j),b in ideal_bools.items():
+        if not solver.Value(b):
+            requested = ideal_days_between_exams[(i,j)]
+            actual = abs(solver.Value(exams[i]) - solver.Value(exams[j]))
+            failed.append((exam_names[i],exam_names[j],requested,actual))
+            # st.warning(f'Could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}', icon="⚠️")
+else:
+    st.error('No solution found :(')
+    st.stop()
 
 #### Save solution to the Google Sheet ####
 message = "writing output to spreadsheet"
@@ -340,6 +338,13 @@ with st.spinner(text=message.capitalize() + '...'):
         date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
         date_range = 'C3:C' + str(len(sorted_items) + 2)  # Range excluding header row
         output.format(date_range, date_format)
+
+        # Dump failed soft constraints into columns E:H
+        output.batch_update({
+            'range': 'E3:H',
+            'values': failed,
+            }, 
+            value_input_option="USER_ENTERED")
 
         st.success('Done ' + message)
     else:

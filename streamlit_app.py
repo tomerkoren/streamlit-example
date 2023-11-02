@@ -291,10 +291,6 @@ if success:
     message = 'an OPTIMAL' if status == cp_model.OPTIMAL else 'a FEASIBLE'
     st.success(f'Found {message} solution')
 
-    for (i,j),b in ideal_bools.items():
-        if not solver.Value(b):
-            st.warning(f'Could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}', icon="⚠️")
-
     # dump solution into a dictionary
     solution = {}
     for i in range(num_exams):
@@ -310,7 +306,9 @@ if success:
             requested = ideal_days_between_exams[(i,j)]
             actual = abs(solver.Value(exams[i]) - solver.Value(exams[j]))
             failed_list.append((exam_names[i],exam_names[j],requested,actual))
-            # st.warning(f'Could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}', icon="⚠️")
+    
+    if len(failed_list)>0:
+        st.warning(f'Some requested gap constraints could not be satisfied (see output sheet)', icon="⚠️")
 else:
     st.error('No solution found :(')
     st.stop()
@@ -340,5 +338,5 @@ with st.spinner(text=message.capitalize() + '...'):
     output.format(date_range, date_format)
 
     # Dump failed soft constraints into columns E:H
-    output.update(f'E{start_row}:H{start_row+len(failed_list)-1}', failed_list, value_input_option="USER_ENTERED")
+    output.update(range_name=f'E{start_row}:H{start_row+len(failed_list)-1}', values=failed_list, value_input_option="USER_ENTERED")
     

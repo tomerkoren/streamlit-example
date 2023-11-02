@@ -330,7 +330,10 @@ with st.spinner(text=message.capitalize() + '...'):
     for i, (exam, date) in enumerate(sorted_items):
         date = date.strftime('%d/%m/%Y')
         data.append([exam, date])
-    output.append_rows(data, value_input_option="USER_ENTERED")
+    # output.append_rows(data, value_input_option="USER_ENTERED")
+    output.update(values=data, 
+                  range_name=f'B{start_row}:C{start_row+len(data)-1}',
+                  value_input_option="USER_ENTERED")
     
     # Style dates in column C
     date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}

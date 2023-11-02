@@ -283,7 +283,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # Solve!
     status = solver.Solve(model)
     # check status
-    success = (status not in [cp_model.OPTIMAL, cp_model.FEASIBLE])
+    success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
 
 if success:
     # Solution found!
@@ -324,28 +324,25 @@ with st.spinner(text=message.capitalize() + '...'):
     # Clear existing content in the 'Output' worksheet starting from row 3
     start_row = 3
     end_row = output.row_count
-    output.batch_clear([f'B{start_row}:C{end_row}'])
+    output.batch_clear([f'B{start_row}:H{end_row}'])
 
-    if len(solution) > 0:
-        sorted_items = sorted(solution.items(), key=lambda x: x[1])
-        data = []
-        for i, (exam, date) in enumerate(sorted_items):
-            date = date.strftime('%d/%m/%Y')
-            data.append([exam, date])
-        output.append_rows(data, value_input_option="USER_ENTERED")
-        
-        # Style dates in column C
-        date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
-        date_range = 'C3:C' + str(len(sorted_items) + 2)  # Range excluding header row
-        output.format(date_range, date_format)
+    # dump solution into columns B:C
+    sorted_items = sorted(solution.items(), key=lambda x: x[1])
+    data = []
+    for i, (exam, date) in enumerate(sorted_items):
+        date = date.strftime('%d/%m/%Y')
+        data.append([exam, date])
+    output.append_rows(data, value_input_option="USER_ENTERED")
+    
+    # Style dates in column C
+    date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
+    date_range = 'C3:C' + str(len(sorted_items) + 2)  # Range excluding header row
+    output.format(date_range, date_format)
 
-        # Dump failed soft constraints into columns E:H
-        output.batch_update({
-            'range': 'E3:H',
-            'values': failed,
-            }, 
-            value_input_option="USER_ENTERED")
-
-        st.success('Done ' + message)
-    else:
-        output.append_row(['', 'No solution found :('])
+    # Dump failed soft constraints into columns E:H
+    output.batch_update({
+        'range': 'E3:H',
+        'values': failed,
+        }, 
+        value_input_option="USER_ENTERED")
+    

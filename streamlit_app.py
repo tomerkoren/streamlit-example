@@ -338,5 +338,8 @@ with st.spinner(text=message.capitalize() + '...'):
     output.format(date_range, date_format)
 
     # Dump failed soft constraints into columns E:H
-    output.update(range_name=f'E{start_row}:H{start_row+len(failed_list)-1}', values=failed_list, value_input_option="USER_ENTERED")
-    
+    output.update(values=failed_list, 
+                  range_name=f'E{start_row}:H{start_row+len(failed_list)-1}', 
+                  value_input_option="USER_ENTERED")
+
+st.success(f'All done!')

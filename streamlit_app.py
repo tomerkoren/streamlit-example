@@ -304,12 +304,12 @@ if success:
         solution[exam] = date
     
     # dump failed soft constraints into a list
-    failed = []
+    failed_list = []
     for (i,j),b in ideal_bools.items():
         if not solver.Value(b):
             requested = ideal_days_between_exams[(i,j)]
             actual = abs(solver.Value(exams[i]) - solver.Value(exams[j]))
-            failed.append((exam_names[i],exam_names[j],requested,actual))
+            failed_list.append((exam_names[i],exam_names[j],requested,actual))
             # st.warning(f'Could not satisfy ideal gap: {exam_names[i]}, {exam_names[j]}', icon="⚠️")
 else:
     st.error('No solution found :(')
@@ -341,8 +341,8 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # Dump failed soft constraints into columns E:H
     output.batch_update({
-        'range': 'E3:H',
-        'values': failed,
+        'range': f'B{start_row}:H{end_row}',
+        'values': failed_list,
         }, 
         value_input_option="USER_ENTERED")
     

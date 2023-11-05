@@ -305,7 +305,7 @@ status = solver.Solve(model)
 success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
 
 # Complete progressbar
-pbar.progress(1.0, text=message)
+st.session_state["counter"] = 1.0
 
 if success:
     # Solution found!

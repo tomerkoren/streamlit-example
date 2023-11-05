@@ -282,7 +282,7 @@ solver.parameters.max_time_in_seconds = time_limit
 
 
 
-# Prepare for solving
+# Start progressbar
 message = f'solving scheduling problem (limiting to {time_limit}s)'
 pbar = st.progress(0, text=message.capitalize() + '...')
 st.session_state["counter"] = 0.0
@@ -292,7 +292,7 @@ async def timer(pbar):
         progress = st.session_state["counter"]
         pbar.progress(progress, text=message)
         incr = 1.0/time_limit
-        st.session_state["counter"] = progress+incr
+        st.session_state["counter"] = min(progress+incr,1)
         r = await asyncio.sleep(1)
 asyncio.run(timer(pbar))
 
@@ -300,6 +300,9 @@ asyncio.run(timer(pbar))
 status = solver.Solve(model)
 # check status
 success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
+
+# Complete progressbar
+pbar.progress(1.0, text=message)
 
 if success:
     # Solution found!

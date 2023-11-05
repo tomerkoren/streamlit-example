@@ -290,7 +290,7 @@ st.session_state["counter"] = 0.0
 async def timer(pbar):
     while True:
         progress = st.session_state["counter"]
-        pbar.progress(progress, text=message)
+        pbar.progress(progress, text=message.capitalize() + '...')
         if progress == 1.0: return
 
         incr = 1.0/time_limit

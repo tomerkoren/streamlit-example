@@ -280,8 +280,6 @@ solver = cp_model.CpSolver()
 # Sets a time limit
 solver.parameters.max_time_in_seconds = time_limit
 
-
-
 # Start progressbar
 # message = f'solving scheduling problem (limiting to {time_limit}s)'
 # pbar = st.progress(0, text=message.capitalize() + '...')
@@ -299,22 +297,10 @@ solver.parameters.max_time_in_seconds = time_limit
 
 # asyncio.run(timer(pbar))
 
-# Solution callback
-class Callback(cp_model.CpSolverSolutionCallback):
-    def __init__(self):
-        cp_model.CpSolverSolutionCallback.__init__(self)
-        self.start = time.time()
-
-    def on_solution_callback(self):
-        now = time.time()
-        st.write(now - start)
-
-
 # Solve!
 message = f'solving scheduling problem (limiting to {time_limit}s)'
-callback = Callback()
 with st.spinner(text=message.capitalize() + '...'):
-    status = solver.SolveWithSolutionCallback(model,callback)
+    status = solver.Solve(model)
     success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
 
 # Complete progressbar

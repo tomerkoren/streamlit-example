@@ -291,7 +291,7 @@ async def timer(pbar):
     while True:
         progress = st.session_state["counter"]
         pbar.progress(progress, text=message)
-        incr = 100.0/time_limit
+        incr = 1.0/time_limit
         st.session_state["counter"] = progress+incr
         r = await asyncio.sleep(1)
 asyncio.run(timer(pbar))

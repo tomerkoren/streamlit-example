@@ -291,9 +291,12 @@ async def timer(pbar):
     while True:
         progress = st.session_state["counter"]
         pbar.progress(progress, text=message)
+        if progress == 1.0: return
+
         incr = 1.0/time_limit
-        st.session_state["counter"] = min(progress+incr,1)
+        st.session_state["counter"] = min(progress+incr,1.0)
         r = await asyncio.sleep(1)
+
 asyncio.run(timer(pbar))
 
 # Solve!

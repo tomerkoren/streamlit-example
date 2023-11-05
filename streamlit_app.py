@@ -5,6 +5,7 @@ from openpyxl.utils.cell import get_column_letter
 from ortools.sat.python import cp_model
 from datetime import datetime
 from google.oauth2 import service_account
+import asyncio
 
 #### regex helper functions ####
 def preprocess_name(name):
@@ -188,104 +189,115 @@ with st.spinner(text=message.capitalize() + '...'):
         for exam in matches: 
             exam_on_date.append((exam, date))
 
-    # st.write(exam_on_date)
-    # pbar.progress(100)
-
-
 st.success('Done ' + message)
 
 
-#### Solve scheduling problem ####
+#### Construct scheduling problem ####
+# message = f'solving scheduling problem (limiting to {time_limit}s)'
+# with st.progress(0, text=message.capitalize() + '...') as pbar:
+
+# Define the number of exams and the number of days
+num_exams = len(exam_names)
+horizon = len(dates)
+
+# Create a CP-SAT model
+model = cp_model.CpModel()
+
+# Create variables
+exams = [model.NewIntVar(0, horizon-1, f'exam_{i}') for i in range(num_exams)]
+
+# Add minimal gap constraints
+for (i, j), days in min_days_between_exams.items():
+    # ignore disabled constraints
+    if days < 1: continue
+
+    # Interval for each exam
+    interval_i = model.NewFixedSizeIntervalVar(exams[i], days, f'mingap_{i,j}')
+    interval_j = model.NewFixedSizeIntervalVar(exams[j], days, f'mingap_{j,i}')
+    model.AddNoOverlap([interval_i, interval_j])
+    # model.Add(exams[i] + min_days <= exams[j] or exams[j] + min_days <= exams[i])
+
+# Add ideal gap constraints
+ideal_bools = {}
+for (i, j), days in ideal_days_between_exams.items():
+    # ignore disabled constraints
+    if days < 1: continue
+
+    b = model.NewBoolVar(f'idealbool_{i,j}')
+    ideal_bools[(i,j)] = b
+
+    # Interval for each exam
+    interval_i = model.NewOptionalFixedSizeIntervalVar(exams[i], days, b, f'idealgap_{i,j}')
+    interval_j = model.NewOptionalFixedSizeIntervalVar(exams[j], days, b, f'idealgap_{j,i}')
+    model.AddNoOverlap([interval_i, interval_j])
+
+# Add daily capacity constraints
+max_capacity = max(dates_capacity)
+exam_intervals = [model.NewFixedSizeIntervalVar(exams[i], 1, f'demand_{i}') for i in range(num_exams)]
+fake_intervals = [model.NewFixedSizeIntervalVar(t, 1, f'fake_demand_{t}') for t in range(horizon)]
+all_intervals = exam_intervals + fake_intervals
+all_demands = exam_demands + [max_capacity - c for c in dates_capacity]
+model.AddCumulative(all_intervals, all_demands, max_capacity)
+
+# Add precedence constraints
+for (i,j) in exam_before_exam:
+    model.Add(exams[i] < exams[j])
+# for (i,t) in exam_before_date:
+#     model.Add(exams[i] < t)
+
+# Add prescheduling constraints
+for (i,t) in exam_on_date:
+    model.Add(exams[i] == t)
+
+
+# # Define the objective: minimize collisions
+# collisions = []
+# for i in range(num_exams):
+#     for j in range(num_exams):
+#         b = model.NewBoolVar(f'{i}{j}')
+#         model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
+#         model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
+#         collisions.append(b)
+
+# factor = num_exams**2
+# if len(ideal_bools) > 0:
+#     # Minimize collisions, but prioritize soft constraints
+#     model.Minimize( -factor * sum(ideal_bools.values()) + sum(collisions) )
+# else:
+#     # Minimize collisions
+#     model.Minimize( sum(collisions) )
+
+# Define the objective: maximize soft constraints satisfaction
+model.Maximize( sum(ideal_bools.values()) )
+
+# # Define the objective: makespan
+# makespan = model.NewIntVar(0, horizon, 'makespan')
+# model.AddMaxEquality(makespan, exams)
+# model.Minimize(makespan)
+
+# Create a solver and solve the model
+solver = cp_model.CpSolver()
+# Sets a time limit
+solver.parameters.max_time_in_seconds = time_limit
+
+
+
+# Prepare for solving
 message = f'solving scheduling problem (limiting to {time_limit}s)'
-with st.spinner(text=message.capitalize() + '...'):
-    # Define the number of exams and the number of days
-    num_exams = len(exam_names)
-    horizon = len(dates)
+pbar = st.progress(0, text=message.capitalize() + '...')
+progress = 0
 
-    # Create a CP-SAT model
-    model = cp_model.CpModel()
+async def timer():
+    while True:
+        pbar.progress(progress + 1, text=message)
+        progress = progress+1
+        r = await asyncio.sleep(1)
+asyncio.run(timer())
 
-    # Create variables
-    exams = [model.NewIntVar(0, horizon-1, f'exam_{i}') for i in range(num_exams)]
-
-    # Add minimal gap constraints
-    for (i, j), days in min_days_between_exams.items():
-        # ignore disabled constraints
-        if days < 1: continue
-
-        # Interval for each exam
-        interval_i = model.NewFixedSizeIntervalVar(exams[i], days, f'mingap_{i,j}')
-        interval_j = model.NewFixedSizeIntervalVar(exams[j], days, f'mingap_{j,i}')
-        model.AddNoOverlap([interval_i, interval_j])
-        # model.Add(exams[i] + min_days <= exams[j] or exams[j] + min_days <= exams[i])
-
-    # Add ideal gap constraints
-    ideal_bools = {}
-    for (i, j), days in ideal_days_between_exams.items():
-        # ignore disabled constraints
-        if days < 1: continue
-
-        b = model.NewBoolVar(f'idealbool_{i,j}')
-        ideal_bools[(i,j)] = b
-
-        # Interval for each exam
-        interval_i = model.NewOptionalFixedSizeIntervalVar(exams[i], days, b, f'idealgap_{i,j}')
-        interval_j = model.NewOptionalFixedSizeIntervalVar(exams[j], days, b, f'idealgap_{j,i}')
-        model.AddNoOverlap([interval_i, interval_j])
-
-    # Add daily capacity constraints
-    max_capacity = max(dates_capacity)
-    exam_intervals = [model.NewFixedSizeIntervalVar(exams[i], 1, f'demand_{i}') for i in range(num_exams)]
-    fake_intervals = [model.NewFixedSizeIntervalVar(t, 1, f'fake_demand_{t}') for t in range(horizon)]
-    all_intervals = exam_intervals + fake_intervals
-    all_demands = exam_demands + [max_capacity - c for c in dates_capacity]
-    model.AddCumulative(all_intervals, all_demands, max_capacity)
-
-    # Add precedence constraints
-    for (i,j) in exam_before_exam:
-        model.Add(exams[i] < exams[j])
-    # for (i,t) in exam_before_date:
-    #     model.Add(exams[i] < t)
-
-    # Add prescheduling constraints
-    for (i,t) in exam_on_date:
-        model.Add(exams[i] == t)
-
-
-    # # Define the objective: minimize collisions
-    # collisions = []
-    # for i in range(num_exams):
-    #     for j in range(num_exams):
-    #         b = model.NewBoolVar(f'{i}{j}')
-    #         model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
-    #         model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
-    #         collisions.append(b)
-
-    # factor = num_exams**2
-    # if len(ideal_bools) > 0:
-    #     # Minimize collisions, but prioritize soft constraints
-    #     model.Minimize( -factor * sum(ideal_bools.values()) + sum(collisions) )
-    # else:
-    #     # Minimize collisions
-    #     model.Minimize( sum(collisions) )
-
-    # Define the objective: maximize soft constraints satisfaction
-    model.Maximize( sum(ideal_bools.values()) )
-
-    # # Define the objective: makespan
-    # makespan = model.NewIntVar(0, horizon, 'makespan')
-    # model.AddMaxEquality(makespan, exams)
-    # model.Minimize(makespan)
-
-    # Create a solver and solve the model
-    solver = cp_model.CpSolver()
-    # Sets a time limit
-    solver.parameters.max_time_in_seconds = time_limit
-
-    # Solve!
-    status = solver.Solve(model)
-    # check status
-    success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
+# Solve!
+status = solver.Solve(model)
+# check status
+success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
 
 if success:
     # Solution found!

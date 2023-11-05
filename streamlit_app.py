@@ -49,6 +49,9 @@ st.title('Exam scheduler 2024a')
 
 st.write('Enter data in spreadsheet:')
 st.write(st.secrets["private_gsheets_url"])
+
+time_limit = st.slider('Time limit (seconds):', 1, 120, 20)
+
 if not st.button("Process!"):
     st.stop()
 
@@ -193,7 +196,6 @@ st.success('Done ' + message)
 
 
 #### Solve scheduling problem ####
-time_limit = 20.0
 message = f'solving scheduling problem (limiting to {time_limit}s)'
 with st.spinner(text=message.capitalize() + '...'):
     # Define the number of exams and the number of days

@@ -5,7 +5,7 @@ from openpyxl.utils.cell import get_column_letter
 from ortools.sat.python import cp_model
 from datetime import datetime
 from google.oauth2 import service_account
-import asyncio
+import time
 
 #### regex helper functions ####
 def preprocess_name(name):
@@ -299,10 +299,15 @@ solver.parameters.max_time_in_seconds = time_limit
 
 # asyncio.run(timer(pbar))
 
+start = time.time()
+def callback(solution):
+    now = time.time()
+    st.write(now - start)
+
 # Solve!
 message = f'solving scheduling problem (limiting to {time_limit}s)'
 with st.spinner(text=message.capitalize() + '...'):
-    status = solver.Solve(model)
+    status = solver.SolveWithSolutionCallback(model,callback)
     success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
 
 # Complete progressbar

@@ -122,6 +122,7 @@ with st.spinner(text=message.capitalize() + '...'):
         min_days = int(min_days) if min_days else None
         ideal_days = int(ideal_days) if ideal_days else None
 
+        duplicates_found = False
         for (exam1, exam2) in pairs:
             # ensure that exam1 < exam2 to avoid duplicates
             if exam1 == exam2: continue
@@ -129,12 +130,15 @@ with st.spinner(text=message.capitalize() + '...'):
 
             # detect duplicates
             if min_days and ((exam1, exam2) in min_days_between_exams) or ideal_days and ((exam1, exam2) in ideal_days_between_exams):
-                st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
+                duplicates_found = True
             
             if min_days:
                 min_days_between_exams[(exam1, exam2)] = min_days
             if ideal_days:
                 ideal_days_between_exams[(exam1, exam2)] = ideal_days
+        
+        if duplicates_found:
+            st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
 
     # Filter out redundant constraints
     for (pair, min_days) in min_days_between_exams.items():
@@ -163,13 +167,17 @@ with st.spinner(text=message.capitalize() + '...'):
             st.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
         # st.write(f'found {len(pairs)} matching pairs for precedence constraints')
 
+        duplicates_found = False
         for (exam1, exam2) in pairs:
             # detect duplicates
             if (exam1, exam2) in exam_before_exam:
-                st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
+                duplicates_found = True
                 exam_before_exam.remove((exam1, exam2))
 
             exam_before_exam.append((exam1, exam2))
+        
+        if duplicates_found:
+            st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
 
     # exam_before_date = []
     # for row_i, row in enumerate(data_rows):
@@ -200,13 +208,17 @@ with st.spinner(text=message.capitalize() + '...'):
         # st.write(f'found {len(matches)} matches for prescheduled constraints')
         date = date_index[date]
 
+        duplicates_found = False
         for exam in matches: 
             # detect duplicates
             if (exam, date) in exam_on_date:
-                st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
+                duplicates_found = True
                 exam_on_date.remove((exam, date))
             
             exam_on_date.append((exam, date))
+
+        if duplicates_found:
+            st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
 
 st.success('Done ' + message)
 

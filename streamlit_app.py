@@ -126,10 +126,11 @@ with st.spinner(text=message.capitalize() + '...'):
 
         duplicates_found = False
         overriding = False
-        for pair in pairs:
+        for (exam1,exam2) in pairs:
             # ensure that exam1 < exam2 to avoid duplicates
-            if pair[0] == pair[1]: continue
-            if pair[0] > pair[1]: (pair[0], pair[1]) = (pair[1], pair[0])
+            if exam1 == exam2: continue
+            if exam1 > exam2: (exam1, exam2) = (exam2, exam1)
+            pair = (exam1,exam2)
 
             # update values, detect duplicates
             if min_days:

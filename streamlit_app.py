@@ -349,15 +349,14 @@ with st.spinner(text=message.capitalize() + '...'):
 
 # determine success & status
 success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
-match status:
-    case cp_model.OPTIMAL:
-        status_name = 'OPTIMAL'
-    case cp_model.FEASIBLE:
-        status_name = 'FEASIBLE'
-    case cp_model.INFEASIBLE:
-        status_name = 'INFEASIBLE'
-    case _: #cp_model.UNKNOWN
-        status_name = 'TIMEOUT'
+if status == cp_model.OPTIMAL:
+    status_name = 'OPTIMAL'
+elif status == cp_model.FEASIBLE:
+    status_name = 'FEASIBLE'
+elif status == cp_model.INFEASIBLE:
+    status_name = 'INFEASIBLE'
+else: #cp_model.UNKNOWN
+    status_name = 'TIMEOUT'
 
 # Complete progressbar
 # st.session_state["counter"] = 1.0

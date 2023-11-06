@@ -390,7 +390,7 @@ with st.spinner(text=message.capitalize() + '...'):
     # write timestamp into A1
     timestamp = ('SUCCESS; ' if success else 'FAILURE; ') + datetime.now().strftime("%I:%M%p on %B %d, %Y")
     output.update(values=[timestamp],
-                  range_name=['A1'],
+                  range_name='A1',
                   value_input_option="USER_ENTERED")
     
     if success:

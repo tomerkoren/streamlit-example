@@ -125,22 +125,32 @@ with st.spinner(text=message.capitalize() + '...'):
         ideal_days = int(ideal_days) if ideal_days else None
 
         duplicates_found = False
-        for (exam1, exam2) in pairs:
+        overriding = False
+        for pair in pairs:
             # ensure that exam1 < exam2 to avoid duplicates
-            if exam1 == exam2: continue
-            if exam1 > exam2: (exam1, exam2) = (exam2, exam1)
+            if pair[0] == pair[1]: continue
+            if pair[0] > pair[1]: (pair[0], pair[1]) = (pair[1], pair[0])
 
-            # detect duplicates
-            if min_days and ((exam1, exam2) in min_days_between_exams) or ideal_days and ((exam1, exam2) in ideal_days_between_exams):
-                duplicates_found = True
-            
+            # update values, detect duplicates
             if min_days:
-                min_days_between_exams[(exam1, exam2)] = min_days
+                if pair in min_days_between_exams: 
+                    duplicates_found = True
+                    if min_days != min_days_between_exams[pair]:
+                        overriding = True
+                min_days_between_exams[pair] = min_days
+            
             if ideal_days:
-                ideal_days_between_exams[(exam1, exam2)] = ideal_days
+                if pair in ideal_days_between_exams:
+                    duplicates_found = True
+                    if ideal_days != ideal_days_between_exams[pair]:
+                        overriding = True
+                ideal_days_between_exams[pair] = ideal_days
         
         if duplicates_found:
-            log.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
+            if overriding:
+                log.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3} (OVERRIDING)', icon="⚠️")
+            else:
+                log.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3} (non-overriding)', icon="⚠️")
 
     # Filter out redundant constraints
     for (pair, min_days) in min_days_between_exams.items():

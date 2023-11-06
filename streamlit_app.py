@@ -1,11 +1,12 @@
 import streamlit as st
 import gspread
 import re
-from openpyxl.utils.cell import get_column_letter
+# from openpyxl.utils.cell import get_column_letter
 from ortools.sat.python import cp_model
 from datetime import datetime
 from google.oauth2 import service_account
-import time
+# import time
+import datetime
 
 #### regex helper functions ####
 def preprocess_name(name):
@@ -51,7 +52,7 @@ st.title('Exam scheduler 2024a')
 st.write('Enter data in spreadsheet:')
 st.write(st.secrets["private_gsheets_url"])
 
-time_limit = st.slider('Time limit (seconds):', 1, 180, 20)
+time_limit_mins = st.slider('Time limit (minutes):', min_value=1.0, max_value=60.0, value=1.0, step=0.5)
 
 if not st.button("Process!"):
     st.stop()
@@ -237,7 +238,7 @@ st.success('Done ' + message)
 
 
 #### Construct scheduling problem ####
-# message = f'solving scheduling problem (limiting to {time_limit}s)'
+# message = f'solving scheduling problem (limiting to {time_limit_mins}m)'
 # with st.progress(0, text=message.capitalize() + '...') as pbar:
 
 # Define the number of exams and the number of days
@@ -322,10 +323,10 @@ model.Maximize( sum(ideal_bools.values()) )
 # Create a solver and solve the model
 solver = cp_model.CpSolver()
 # Sets a time limit
-solver.parameters.max_time_in_seconds = time_limit
+solver.parameters.max_time_in_seconds = time_limit_mins * 60.0
 
 # Start progressbar
-# message = f'solving scheduling problem (limiting to {time_limit}s)'
+# message = f'solving scheduling problem (limiting to {time_limit_mins}m)'
 # pbar = st.progress(0, text=message.capitalize() + '...')
 # st.session_state["counter"] = 0.0
 
@@ -335,14 +336,14 @@ solver.parameters.max_time_in_seconds = time_limit
 #         pbar.progress(progress, text=message.capitalize() + '...')
 #         if progress == 1.0: return
 
-#         incr = 1.0/time_limit
+#         incr = 1.0/(time_limit_mins * 60.0)
 #         st.session_state["counter"] = min(progress+incr,1.0)
 #         r = await asyncio.sleep(1)
 
 # asyncio.run(timer(pbar))
 
 # Solve!
-message = f'solving scheduling problem (limiting to {time_limit}s)'
+message = f'solving scheduling problem (limiting to {time_limit_mins}m)'
 with st.spinner(text=message.capitalize() + '...'):
     status = solver.Solve(model)
     success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
@@ -391,6 +392,12 @@ with st.spinner(text=message.capitalize() + '...'):
     start_row = 3
     end_row = output.row_count
     output.batch_clear([f'B{start_row}:H{end_row}'])
+
+    # write timestamp into A1
+    timestamp = datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")
+    output.update(values=[timestamp],
+                  date_range=['A1'],
+                  value_input_option="USER_ENTERED")
 
     # dump solution into columns B:C
     sorted_items = sorted(solution.items(), key=lambda x: x[1])

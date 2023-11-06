@@ -119,8 +119,8 @@ with st.spinner(text=message.capitalize() + '...'):
             st.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
         # st.write(f'found matching pairs for gap constraints: {pairs}')
 
-        min_days = int(min_days) if min_days else 0
-        ideal_days = int(ideal_days) if ideal_days else 0
+        min_days = int(min_days) if min_days else None
+        ideal_days = int(ideal_days) if ideal_days else None
 
         for (exam1, exam2) in pairs:
             # ensure that exam1 < exam2 to avoid duplicates
@@ -128,13 +128,15 @@ with st.spinner(text=message.capitalize() + '...'):
             if exam1 > exam2: (exam1, exam2) = (exam2, exam1)
 
             # detect duplicates
-            if (exam1, exam2) in min_days_between_exams or (exam1, exam2) in ideal_days_between_exams:
+            if min_days and ((exam1, exam2) in min_days_between_exams) or ideal_days and ((exam1, exam2) in ideal_days_between_exams):
                 st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
             
-            min_days_between_exams[(exam1, exam2)] = min_days
-            ideal_days_between_exams[(exam1, exam2)] = ideal_days
+            if min_days:
+                min_days_between_exams[(exam1, exam2)] = min_days
+            if ideal_days:
+                ideal_days_between_exams[(exam1, exam2)] = ideal_days
 
-    # Filter redundant constraints
+    # Filter out redundant constraints
     for (pair, min_days) in min_days_between_exams.items():
         ideal_days = ideal_days_between_exams.get(pair)
         if ideal_days and ideal_days <= min_days: 
@@ -324,10 +326,10 @@ with st.spinner(text=message.capitalize() + '...'):
 # st.session_state["counter"] = 1.0
 
 if status == cp_model.UNKNOWN:
-    st.error('No solution found! Try increasing the time limit.')
+    st.error('No solution found within time limit :( Try increasing the limit.')
     st.stop()
 elif status == cp_model.INFEASIBLE:
-    st.error('The scheduling problem was proven infeasible! Try relaxing hard constraints.')
+    st.error('The scheduling problem was proven infeasible :( Try relaxing some hard constraints.')
     st.stop()
 
 # Solution found!

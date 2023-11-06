@@ -346,7 +346,18 @@ solver.parameters.max_time_in_seconds = time_limit_mins * 60.0
 message = f'solving scheduling problem (limiting to {time_limit_mins}m)'
 with st.spinner(text=message.capitalize() + '...'):
     status = solver.Solve(model)
-    success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
+
+# determine success & status
+success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
+match status:
+    case cp_model.OPTIMAL:
+        status_name = 'OPTIMAL'
+    case cp_model.FEASIBLE:
+        status_name = 'FEASIBLE'
+    case cp_model.INFEASIBLE:
+        status_name = 'INFEASIBLE'
+    case _: #cp_model.UNKNOWN
+        status_name = 'TIMEOUT'
 
 # Complete progressbar
 # st.session_state["counter"] = 1.0
@@ -354,8 +365,8 @@ with st.spinner(text=message.capitalize() + '...'):
 if success:
     # Solution found!
     st.balloons()
-    message = 'an OPTIMAL' if status == cp_model.OPTIMAL else 'a FEASIBLE'
-    st.success(f'Found {message} solution')
+    # message = 'an OPTIMAL' if status == cp_model.OPTIMAL else 'a FEASIBLE'
+    st.success(f'{status_name} solution found')
 
     # dump solution into a dictionary
     solution = {}
@@ -390,7 +401,7 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # write timestamp into A1
     timezone = ZoneInfo('Asia/Jerusalem')
-    timestamp = ('SUCCESS; ' if success else 'FAILURE; ') + datetime.now(tz=timezone).strftime("%I:%M%p on %B %d, %Y")
+    timestamp = status_name + '; ' + datetime.now(tz=timezone).strftime("%I:%M%p on %B %d, %Y")
     output.update(values=[[timestamp]],
                   range_name='C1',
                   value_input_option="USER_ENTERED")

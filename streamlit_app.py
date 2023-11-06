@@ -6,7 +6,6 @@ from ortools.sat.python import cp_model
 from datetime import datetime
 from google.oauth2 import service_account
 # import time
-import datetime
 
 #### regex helper functions ####
 def preprocess_name(name):
@@ -394,9 +393,9 @@ with st.spinner(text=message.capitalize() + '...'):
     output.batch_clear([f'B{start_row}:H{end_row}'])
 
     # write timestamp into A1
-    timestamp = datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")
+    timestamp = datetime.now().strftime("%I:%M%p on %B %d, %Y")
     output.update(values=[timestamp],
-                  date_range=['A1'],
+                  range_name=['A1'],
                   value_input_option="USER_ENTERED")
 
     # dump solution into columns B:C

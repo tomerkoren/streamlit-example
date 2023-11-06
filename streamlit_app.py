@@ -60,6 +60,8 @@ if not st.button("Process!"):
 #### Read Google Sheets input ####
 message = "reading data from spreadsheet"
 with st.spinner(text=message.capitalize() + '...'):
+    log = st.expander("Log", expanded=False)
+
     # pbar = st.progress(20, text="Reading data from spreadsheet...")
     sheet_url = st.secrets["private_gsheets_url"]
     workbook = gc.open_by_url(sheet_url)
@@ -116,7 +118,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         if len(pairs) == 0:
-            st.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
+            log.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
         # st.write(f'found matching pairs for gap constraints: {pairs}')
 
         min_days = int(min_days) if min_days else None
@@ -138,7 +140,7 @@ with st.spinner(text=message.capitalize() + '...'):
                 ideal_days_between_exams[(exam1, exam2)] = ideal_days
         
         if duplicates_found:
-            st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
+            log.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
 
     # Filter out redundant constraints
     for (pair, min_days) in min_days_between_exams.items():
@@ -164,7 +166,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         if len(pairs) == 0:
-            st.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
+            log.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
         # st.write(f'found {len(pairs)} matching pairs for precedence constraints')
 
         duplicates_found = False
@@ -177,7 +179,7 @@ with st.spinner(text=message.capitalize() + '...'):
             exam_before_exam.append((exam1, exam2))
         
         if duplicates_found:
-            st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
+            log.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
 
     # exam_before_date = []
     # for row_i, row in enumerate(data_rows):
@@ -204,7 +206,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern = preprocess_pattern(pattern)
         matches = get_matching(pattern,exam_names,exam_index)
         if len(matches) == 0:
-            st.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
+            log.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
         # st.write(f'found {len(matches)} matches for prescheduled constraints')
         date = date_index[date]
 
@@ -218,7 +220,7 @@ with st.spinner(text=message.capitalize() + '...'):
             exam_on_date.append((exam, date))
 
         if duplicates_found:
-            st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
+            log.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
 
 st.success('Done ' + message)
 

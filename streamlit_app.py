@@ -350,36 +350,36 @@ with st.spinner(text=message.capitalize() + '...'):
 # Complete progressbar
 # st.session_state["counter"] = 1.0
 
-if status == cp_model.UNKNOWN:
-    st.error('No solution found within time limit :( Try increasing the limit.')
-    st.stop()
+if success:
+    # Solution found!
+    st.balloons()
+    message = 'an OPTIMAL' if status == cp_model.OPTIMAL else 'a FEASIBLE'
+    st.success(f'Found {message} solution')
+
+    # dump solution into a dictionary
+    solution = {}
+    for i in range(num_exams):
+        exam = exam_names[i]
+        date = dates[solver.Value(exams[i])]
+        date = datetime.strptime(date, '%d/%m/%Y').date()
+        solution[exam] = date
+
+    # dump failed soft constraints into a list
+    failed_list = []
+    for (i,j),b in ideal_bools.items():
+        if not solver.Value(b):
+            requested = ideal_days_between_exams[(i,j)]
+            actual = abs(solver.Value(exams[i]) - solver.Value(exams[j]))
+            failed_list.append((exam_names[i],exam_names[j],requested,actual))
+
+    if len(failed_list)>0:
+        st.warning(f'Some requested gap constraints could not be satisfied (see output sheet)', icon="⚠️")
+    
 elif status == cp_model.INFEASIBLE:
     st.error('The scheduling problem was proven infeasible :( Try relaxing some hard constraints.')
-    st.stop()
+else: # status == cp_model.UNKNOWN
+    st.error('No solution found within time limit :( Try increasing the limit.')
 
-# Solution found!
-st.balloons()
-message = 'an OPTIMAL' if status == cp_model.OPTIMAL else 'a FEASIBLE'
-st.success(f'Found {message} solution')
-
-# dump solution into a dictionary
-solution = {}
-for i in range(num_exams):
-    exam = exam_names[i]
-    date = dates[solver.Value(exams[i])]
-    date = datetime.strptime(date, '%d/%m/%Y').date()
-    solution[exam] = date
-
-# dump failed soft constraints into a list
-failed_list = []
-for (i,j),b in ideal_bools.items():
-    if not solver.Value(b):
-        requested = ideal_days_between_exams[(i,j)]
-        actual = abs(solver.Value(exams[i]) - solver.Value(exams[j]))
-        failed_list.append((exam_names[i],exam_names[j],requested,actual))
-
-if len(failed_list)>0:
-    st.warning(f'Some requested gap constraints could not be satisfied (see output sheet)', icon="⚠️")
 
 #### Save solution to the Google Sheet ####
 message = "writing output to spreadsheet"
@@ -387,36 +387,37 @@ with st.spinner(text=message.capitalize() + '...'):
     # Open the 'Output' worksheet
     output = workbook.worksheet('שיבוץ')
 
-    # Clear existing content in the 'Output' worksheet starting from row 3
-    start_row = 3
-    end_row = output.row_count
-    output.batch_clear([f'B{start_row}:H{end_row}'])
-
     # write timestamp into A1
-    timestamp = datetime.now().strftime("%I:%M%p on %B %d, %Y")
+    timestamp = ('SUCCESS; ' if success else 'FAILURE; ') + datetime.now().strftime("%I:%M%p on %B %d, %Y")
     output.update(values=[timestamp],
                   range_name=['A1'],
                   value_input_option="USER_ENTERED")
-
-    # dump solution into columns B:C
-    sorted_items = sorted(solution.items(), key=lambda x: x[1])
-    data = []
-    for i, (exam, date) in enumerate(sorted_items):
-        date = date.strftime('%d/%m/%Y')
-        data.append([exam, date])
-    # output.append_rows(data, value_input_option="USER_ENTERED")
-    output.update(values=data, 
-                  range_name=f'B{start_row}:C{start_row+len(data)-1}',
-                  value_input_option="USER_ENTERED")
     
-    # Style dates in column C
-    date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
-    date_range = 'C3:C' + str(len(sorted_items) + 2)  # Range excluding header row
-    output.format(date_range, date_format)
+    if success:
+        # Clear existing content in the 'Output' worksheet starting from row 3
+        start_row = 3
+        end_row = output.row_count
+        output.batch_clear([f'B{start_row}:H{end_row}'])
 
-    # Dump failed soft constraints into columns E:H
-    output.update(values=failed_list, 
-                  range_name=f'E{start_row}:H{start_row+len(failed_list)-1}', 
-                  value_input_option="USER_ENTERED")
+        # dump solution into columns B:C
+        sorted_items = sorted(solution.items(), key=lambda x: x[1])
+        data = []
+        for i, (exam, date) in enumerate(sorted_items):
+            date = date.strftime('%d/%m/%Y')
+            data.append([exam, date])
+        # output.append_rows(data, value_input_option="USER_ENTERED")
+        output.update(values=data, 
+                    range_name=f'B{start_row}:C{start_row+len(data)-1}',
+                    value_input_option="USER_ENTERED")
+        
+        # Style dates in column C
+        date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
+        date_range = 'C3:C' + str(len(sorted_items) + 2)  # Range excluding header row
+        output.format(date_range, date_format)
 
-st.success(f'All done!')
+        # Dump failed soft constraints into columns E:H
+        output.update(values=failed_list, 
+                    range_name=f'E{start_row}:H{start_row+len(failed_list)-1}', 
+                    value_input_option="USER_ENTERED")
+        
+        st.success(f'All done!')

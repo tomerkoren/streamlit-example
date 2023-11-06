@@ -389,13 +389,13 @@ with st.spinner(text=message.capitalize() + '...'):
 
     # write timestamp into A1
     timestamp = ('SUCCESS; ' if success else 'FAILURE; ') + datetime.now().strftime("%I:%M%p on %B %d, %Y")
-    output.update(values=timestamp,
+    output.update(values=[[timestamp]],
                   range_name='A1',
                   value_input_option="USER_ENTERED")
     
     if success:
         # Clear existing content in the 'Output' worksheet starting from row 3
-        start_row = 3
+        start_row = 4
         end_row = output.row_count
         output.batch_clear([f'B{start_row}:H{end_row}'])
 

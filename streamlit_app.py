@@ -1,10 +1,11 @@
 import streamlit as st
 import gspread
-import re
 # from openpyxl.utils.cell import get_column_letter
 from ortools.sat.python import cp_model
-from datetime import datetime
 from google.oauth2 import service_account
+import re
+from datetime import datetime
+from zoneinfo import ZoneInfo
 # import time
 
 #### regex helper functions ####
@@ -388,7 +389,8 @@ with st.spinner(text=message.capitalize() + '...'):
     output = workbook.worksheet('שיבוץ')
 
     # write timestamp into A1
-    timestamp = ('SUCCESS; ' if success else 'FAILURE; ') + datetime.now().strftime("%I:%M%p on %B %d, %Y")
+    timezone = ZoneInfo('Asia/Jerusalem')
+    timestamp = ('SUCCESS; ' if success else 'FAILURE; ') + datetime.now(tz=timezone).strftime("%I:%M%p on %B %d, %Y")
     output.update(values=[[timestamp]],
                   range_name='C1',
                   value_input_option="USER_ENTERED")

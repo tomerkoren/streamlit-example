@@ -128,7 +128,7 @@ with st.spinner(text=message.capitalize() + '...'):
             if exam1 > exam2: (exam1, exam2) = (exam2, exam1)
 
             # detect duplicates
-            if min_days_between_exams.has_key((exam1, exam2)) or ideal_days_between_exams.has_key((exam1, exam2)):
+            if (exam1, exam2) in min_days_between_exams or (exam1, exam2) in ideal_days_between_exams:
                 st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
             
             min_days_between_exams[(exam1, exam2)] = min_days

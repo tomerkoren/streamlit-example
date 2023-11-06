@@ -51,7 +51,7 @@ st.title('Exam scheduler 2024a')
 st.write('Enter data in spreadsheet:')
 st.write(st.secrets["private_gsheets_url"])
 
-time_limit = st.slider('Time limit (seconds):', 1, 120, 20)
+time_limit = st.slider('Time limit (seconds):', 1, 180, 20)
 
 if not st.button("Process!"):
     st.stop()
@@ -102,7 +102,8 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar.progress(40)
 
     # Extract minimal and ideal gap constraints
-    worksheet = workbook.worksheet('מרווחים')
+    sheet_name = 'מרווחים'
+    worksheet = workbook.worksheet(sheet_name)
     data_rows = worksheet.get_all_values()[2:]
 
     min_days_between_exams = {}
@@ -115,7 +116,7 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         if len(pairs) == 0:
-            st.warning(f'Constraint in column {get_column_letter(10)}, row {row_i+3} yielded 0 matches', icon="⚠️")
+            st.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
         # st.write(f'found matching pairs for gap constraints: {pairs}')
 
         min_days = int(min_days) if min_days else 0
@@ -125,6 +126,10 @@ with st.spinner(text=message.capitalize() + '...'):
             # ensure that exam1 < exam2 to avoid duplicates
             if exam1 == exam2: continue
             if exam1 > exam2: (exam1, exam2) = (exam2, exam1)
+
+            # detect duplicates
+            if min_days_between_exams.has_key((exam1, exam2)) or ideal_days_between_exams.has_key((exam1, exam2)):
+                st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
             
             min_days_between_exams[(exam1, exam2)] = min_days
             ideal_days_between_exams[(exam1, exam2)] = ideal_days
@@ -140,7 +145,8 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar.progress(60)
 
     # Extract precedence constraints
-    worksheet = workbook.worksheet('קדימויות')
+    sheet_name = 'קדימויות'
+    worksheet = workbook.worksheet(sheet_name)
     data_rows = worksheet.get_all_values()[2:]
 
     exam_before_exam = []
@@ -152,10 +158,15 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern2 = preprocess_pattern(pattern2)
         pairs = get_matching_pairs(pattern1,pattern2,exam_names,exam_index)
         if len(pairs) == 0:
-            st.warning(f'Constraint in column {get_column_letter(16)}, row {row_i+3} yielded 0 matches', icon="⚠️")
+            st.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
         # st.write(f'found {len(pairs)} matching pairs for precedence constraints')
 
         for (exam1, exam2) in pairs:
+            # detect duplicates
+            if (exam1, exam2) in exam_before_exam:
+                st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
+                exam_before_exam.remove((exam1, exam2))
+
             exam_before_exam.append((exam1, exam2))
 
     # exam_before_date = []
@@ -171,7 +182,8 @@ with st.spinner(text=message.capitalize() + '...'):
     # pbar.progress(80)
 
     # Extract prescheduled constraints
-    worksheet = workbook.worksheet('קיבועים')
+    sheet_name = 'קיבועים'
+    worksheet = workbook.worksheet(sheet_name)
     data_rows = worksheet.get_all_values()[2:]
 
     exam_on_date = []
@@ -182,11 +194,16 @@ with st.spinner(text=message.capitalize() + '...'):
         pattern = preprocess_pattern(pattern)
         matches = get_matching(pattern,exam_names,exam_index)
         if len(matches) == 0:
-            st.warning(f'Constraint in column {get_column_letter(20)}, row {row_i+3} yielded 0 matches', icon="⚠️")
+            st.warning(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches', icon="⚠️")
         # st.write(f'found {len(matches)} matches for prescheduled constraints')
         date = date_index[date]
 
         for exam in matches: 
+            # detect duplicates
+            if (exam, date) in exam_on_date:
+                st.warning(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}', icon="⚠️")
+                exam_on_date.remove((exam, date))
+            
             exam_on_date.append((exam, date))
 
 st.success('Done ' + message)
@@ -306,33 +323,36 @@ with st.spinner(text=message.capitalize() + '...'):
 # Complete progressbar
 # st.session_state["counter"] = 1.0
 
-if success:
-    # Solution found!
-    st.balloons()
-    message = 'an OPTIMAL' if status == cp_model.OPTIMAL else 'a FEASIBLE'
-    st.success(f'Found {message} solution')
-
-    # dump solution into a dictionary
-    solution = {}
-    for i in range(num_exams):
-        exam = exam_names[i]
-        date = dates[solver.Value(exams[i])]
-        date = datetime.strptime(date, '%d/%m/%Y').date()
-        solution[exam] = date
-    
-    # dump failed soft constraints into a list
-    failed_list = []
-    for (i,j),b in ideal_bools.items():
-        if not solver.Value(b):
-            requested = ideal_days_between_exams[(i,j)]
-            actual = abs(solver.Value(exams[i]) - solver.Value(exams[j]))
-            failed_list.append((exam_names[i],exam_names[j],requested,actual))
-    
-    if len(failed_list)>0:
-        st.warning(f'Some requested gap constraints could not be satisfied (see output sheet)', icon="⚠️")
-else:
-    st.error('No solution found :(')
+if status == cp_model.UNKNOWN:
+    st.error('No solution found! Try increasing the time limit.')
     st.stop()
+elif status == cp_model.INFEASIBLE:
+    st.error('The scheduling problem was proven infeasible! Try relaxing hard constraints.')
+    st.stop()
+
+# Solution found!
+st.balloons()
+message = 'an OPTIMAL' if status == cp_model.OPTIMAL else 'a FEASIBLE'
+st.success(f'Found {message} solution')
+
+# dump solution into a dictionary
+solution = {}
+for i in range(num_exams):
+    exam = exam_names[i]
+    date = dates[solver.Value(exams[i])]
+    date = datetime.strptime(date, '%d/%m/%Y').date()
+    solution[exam] = date
+
+# dump failed soft constraints into a list
+failed_list = []
+for (i,j),b in ideal_bools.items():
+    if not solver.Value(b):
+        requested = ideal_days_between_exams[(i,j)]
+        actual = abs(solver.Value(exams[i]) - solver.Value(exams[j]))
+        failed_list.append((exam_names[i],exam_names[j],requested,actual))
+
+if len(failed_list)>0:
+    st.warning(f'Some requested gap constraints could not be satisfied (see output sheet)', icon="⚠️")
 
 #### Save solution to the Google Sheet ####
 message = "writing output to spreadsheet"

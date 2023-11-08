@@ -52,7 +52,7 @@ st.title('Exam scheduler 2024a')
 st.write('Enter data in spreadsheet:')
 st.write(st.secrets["private_gsheets_url"])
 
-time_limit_mins = st.slider('Time limit (minutes):', min_value=0.5, max_value=10.0, value=1.0, step=0.5)
+time_limit_mins = st.slider('Time limit (minutes):', min_value=1, max_value=60, value=1, step=1)
 
 if not st.button("Process!"):
     st.stop()

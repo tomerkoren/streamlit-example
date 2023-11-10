@@ -1,6 +1,3 @@
-altair
-pandas
 streamlit
 gspread
 ortools
-openpyxl

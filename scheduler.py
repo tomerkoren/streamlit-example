@@ -168,19 +168,23 @@ for row_i, row in enumerate(data_rows):
         if exam1 > exam2: (exam1, exam2) = (exam2, exam1)
         pair = (exam1,exam2)
 
-        # update values, detect duplicates
-        if min_days:
-            if pair in min_days_between_exams: 
-                duplicates_found = True
-                if min_days != min_days_between_exams[pair]:
-                    overriding = True
-            min_days_between_exams[pair] = min_days
+        # detect duplicates/overrides
+        if pair in min_days_between_exams:
+            duplicates_found = True
+            if min_days and min_days != min_days_between_exams[pair]:
+                overriding = True
+            del min_days_between_exams[pair]
         
+        if pair in ideal_days_between_exams:
+            duplicates_found = True
+            if min_days and min_days != ideal_days_between_exams[pair]:
+                overriding = True
+            del ideal_days_between_exams[pair]
+
+        # update values
+        if min_days:
+            min_days_between_exams[pair] = min_days
         if ideal_days:
-            if pair in ideal_days_between_exams:
-                duplicates_found = True
-                if ideal_days != ideal_days_between_exams[pair]:
-                    overriding = True
             ideal_days_between_exams[pair] = ideal_days
     
     if duplicates_found:

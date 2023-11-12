@@ -7,6 +7,9 @@ from zoneinfo import ZoneInfo
 import argparse
 import tomllib
 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
+
 #### helper functions ####
 def preprocess_name(name):
     # strip consecutive whitespaces
@@ -62,6 +65,8 @@ class MySolutionCallback(cp_model.CpSolverSolutionCallback):
     def solution_count(self):
         """Returns the number of solutions found."""
         return self.__solution_count
+
+
 
 
 ### Read config

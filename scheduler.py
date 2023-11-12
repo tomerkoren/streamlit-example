@@ -72,9 +72,11 @@ class MySolutionCallback(cp_model.CpSolverSolutionCallback):
 ### Read args
 parser = argparse.ArgumentParser(description='TAU exam scheduler')
 parser.add_argument('--secrets', 
-                    help='TOML secrets file')
+                    help='TOML secrets file',
+                    required=True)
 parser.add_argument('--params', 
-                    help='TOML params file')
+                    help='TOML params file',
+                    required=True)
 parser.add_argument('--debug', 
                     action='store_true',
                     default=False,

@@ -69,7 +69,7 @@ class MySolutionCallback(cp_model.CpSolverSolutionCallback):
 
 
 
-### Read config
+### Read args
 parser = argparse.ArgumentParser(description='TAU exam scheduler')
 parser.add_argument('--secrets', 
                     help='TOML secrets file')
@@ -82,15 +82,15 @@ parser.add_argument('--debug',
 args = parser.parse_args()
 
 # read config TOML files
-with open(args.config, 'rb') as f:
-    config = tomllib.load(f)
+with open(args.secrets, 'rb') as f:
+    secrets = tomllib.load(f)
 with open(args.params, 'rb') as f:
     params = tomllib.load(f)
 debug = args.debug
 
 #### Authorize and connect to Sheets ####
 credentials = service_account.Credentials.from_service_account_info(
-    config["gcp_service_account"],
+    secrets["gcp_service_account"],
     scopes=[
         "https://www.googleapis.com/auth/spreadsheets",
     ],
@@ -99,7 +99,7 @@ gc = gspread.authorize(credentials)
 
 
 #### Read Google Sheets input ####
-sheet_url = config["private_gsheets_url"]
+sheet_url = secrets["private_gsheets_url"]
 workbook = gc.open_by_url(sheet_url)
 
 # Extract exams

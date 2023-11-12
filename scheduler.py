@@ -90,6 +90,11 @@ with open(args.params, 'rb') as f:
     params = tomllib.load(f)
 debug = args.debug
 
+# parameters
+warmstart = params['warmstart']
+time_limit_mins = params['time_limit_mins']
+
+
 #### Authorize and connect to Sheets ####
 credentials = service_account.Credentials.from_service_account_info(
     secrets["gcp_service_account"],

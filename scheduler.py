@@ -92,7 +92,7 @@ debug = args.debug
 
 # parameters
 warmstart = params['warmstart']
-time_limit_mins = params['time_limit_mins']
+time_limit_mins = params['time_limit']
 
 
 #### Authorize and connect to Sheets ####

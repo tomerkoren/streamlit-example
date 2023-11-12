@@ -1,0 +1,9 @@
+# Time limit to pass to solver (in minutes, zero for not limit)
+time_limit = 0
+
+# Whether to initialize at previously found solution
+warmstart = false
+
+# Find solutions <= target objective (find at most 10 solutions)
+# (set to 0 for optimizing for optimal)
+objective_target = 0

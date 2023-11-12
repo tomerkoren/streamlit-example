@@ -71,27 +71,21 @@ class MySolutionCallback(cp_model.CpSolverSolutionCallback):
 
 ### Read config
 parser = argparse.ArgumentParser(description='TAU exam scheduler')
-parser.add_argument('--config', 
-                    help='TOML config file')
-parser.add_argument('--time_limit', 
-                    type=int, default=1,
-                    help='Time limit to pass to solver (in minutes, zero for not limit)')
-parser.add_argument('--warmstart', 
-                    action='store_true',
-                    default=False,
-                    help='Initialize at previously found solution')
+parser.add_argument('--secrets', 
+                    help='TOML secrets file')
+parser.add_argument('--params', 
+                    help='TOML params file')
 parser.add_argument('--debug', 
                     action='store_true',
                     default=False,
                     help='Printout solver log')
 args = parser.parse_args()
 
-# read config TOML file
+# read config TOML files
 with open(args.config, 'rb') as f:
     config = tomllib.load(f)
-# read params
-time_limit_mins = args.time_limit
-warmstart = args.warmstart
+with open(args.params, 'rb') as f:
+    params = tomllib.load(f)
 debug = args.debug
 
 #### Authorize and connect to Sheets ####
@@ -261,7 +255,7 @@ for row_i, row in enumerate(data_rows):
 
 # Add hints to existing solution if warmstart requested
 hints = {}
-if warmstart:
+if params.warmstart:
     sheet_name = 'שיבוץ'
     worksheet = workbook.worksheet(sheet_name)
     data_rows = worksheet.get_all_values()[3:]
@@ -335,31 +329,12 @@ model.AddCumulative(all_intervals, all_demands, max_capacity)
 # Add precedence constraints
 for (i,j) in exam_before_exam:
     model.Add(exams[i] < exams[j])
-# for (i,t) in exam_before_date:
-#     model.Add(exams[i] < t)
 
 # Add prescheduling constraints
 for (i,t) in exam_on_date:
     model.Add(exams[i] == t)
 
-# # Define the objective: minimize collisions
-# collisions = []
-# for i in range(num_exams):
-#     for j in range(num_exams):
-#         b = model.NewBoolVar(f'{i}{j}')
-#         model.Add(exams[i]==exams[j]).OnlyEnforceIf(b)
-#         model.Add(exams[i]!=exams[j]).OnlyEnforceIf(b.Not())
-#         collisions.append(b)
-
-# factor = num_exams**2
-# if len(ideal_violations) > 0:
-#     # Minimize collisions, but prioritize soft constraints
-#     model.Minimize( -factor * sum(ideal_violations.values()) + sum(collisions) )
-# else:
-#     # Minimize collisions
-#     model.Minimize( sum(collisions) )
-
-# Define the objective: maximize soft constraints satisfaction
+# Define the objective: minimize soft constraints violation
 model.Minimize( sum(ideal_violations.values()) )
 
 # # Define the objective: makespan
@@ -370,32 +345,15 @@ model.Minimize( sum(ideal_violations.values()) )
 # Create a solver and solve the model
 solver = cp_model.CpSolver()
 # Set a time limit
-if time_limit_mins > 0:
-    solver.parameters.max_time_in_seconds = time_limit_mins * 60.0
+if params.time_limit_mins > 0:
+    solver.parameters.max_time_in_seconds = params.time_limit_mins * 60.0
 if debug:
     solver.parameters.log_search_progress = True
     solver.log_callback = print
 
-# Start progressbar
-# message = f'solving scheduling problem (limiting to {time_limit_mins}m)'
-# pbar = st.progress(0, text=message.capitalize() + '...')
-# st.session_state["counter"] = 0.0
-
-# async def timer(pbar):
-#     while True:
-#         progress = st.session_state["counter"]
-#         pbar.progress(progress, text=message.capitalize() + '...')
-#         if progress == 1.0: return
-
-#         incr = 1.0/(time_limit_mins * 60.0)
-#         st.session_state["counter"] = min(progress+incr,1.0)
-#         r = await asyncio.sleep(1)
-
-# asyncio.run(timer(pbar))
-
 # Solve!
-if time_limit_mins > 0:
-    log(f'Solving scheduling problem (limiting to {time_limit_mins}m)...')
+if params.time_limit_mins > 0:
+    log(f'Solving scheduling problem (limiting to {params.time_limit_mins}m)...')
 else:
     log(f'Solving scheduling problem (NO time limit)...')
 

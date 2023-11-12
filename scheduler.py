@@ -262,7 +262,7 @@ for row_i, row in enumerate(data_rows):
 
 # Add hints to existing solution if warmstart requested
 hints = {}
-if params.warmstart:
+if warmstart:
     sheet_name = 'שיבוץ'
     worksheet = workbook.worksheet(sheet_name)
     data_rows = worksheet.get_all_values()[3:]
@@ -352,15 +352,15 @@ model.Minimize( sum(ideal_violations.values()) )
 # Create a solver and solve the model
 solver = cp_model.CpSolver()
 # Set a time limit
-if params.time_limit_mins > 0:
-    solver.parameters.max_time_in_seconds = params.time_limit_mins * 60.0
+if time_limit_mins > 0:
+    solver.parameters.max_time_in_seconds = time_limit_mins * 60.0
 if debug:
     solver.parameters.log_search_progress = True
     solver.log_callback = print
 
 # Solve!
-if params.time_limit_mins > 0:
-    log(f'Solving scheduling problem (limiting to {params.time_limit_mins}m)...')
+if time_limit_mins > 0:
+    log(f'Solving scheduling problem (limiting to {time_limit_mins}m)...')
 else:
     log(f'Solving scheduling problem (NO time limit)...')
 

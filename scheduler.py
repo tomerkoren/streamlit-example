@@ -147,8 +147,9 @@ data_rows = worksheet.get_all_values()[2:]
 
 min_days_between_exams = {}
 ideal_days_between_exams = {}
+weights = {}
 for row_i, row in enumerate(data_rows):
-    pattern1, pattern2, min_days, ideal_days = row[1].strip(), row[2].strip(), row[3].strip(), row[4].strip()
+    pattern1, pattern2, min_days, ideal_days, weight = row[1].strip(), row[2].strip(), row[3].strip(), row[4].strip(), row[5].strip()
     if not (pattern1 and pattern2): continue
 
     pattern1 = preprocess_pattern(pattern1)
@@ -159,6 +160,7 @@ for row_i, row in enumerate(data_rows):
 
     min_days = int(min_days) if min_days else None
     ideal_days = int(ideal_days) if ideal_days else None
+    weight = int(weight) if weight else 1
 
     duplicates_found = False
     overriding = False
@@ -173,19 +175,21 @@ for row_i, row in enumerate(data_rows):
             duplicates_found = True
             if min_days and min_days != min_days_between_exams[pair]:
                 overriding = True
-            del min_days_between_exams[pair]
+            min_days_between_exams.pop(pair, None)
         
         if pair in ideal_days_between_exams:
             duplicates_found = True
             if min_days and min_days != ideal_days_between_exams[pair]:
                 overriding = True
-            del ideal_days_between_exams[pair]
+            ideal_days_between_exams.pop(pair, None)
+            weights.pop(pair, None)
 
         # update values
         if min_days:
             min_days_between_exams[pair] = min_days
         if ideal_days:
             ideal_days_between_exams[pair] = ideal_days
+            weights[pair] = weight
     
     if duplicates_found:
         if overriding:
@@ -345,13 +349,23 @@ for (i,j) in exam_before_exam:
 for (i,t) in exam_on_date:
     model.Add(exams[i] == t)
 
-# Define the objective: minimize soft constraints violation
-model.Minimize( sum(ideal_violations.values()) )
+
+# Define the objective
+
+# Minimize soft constraints violation
+# model.Minimize( sum(ideal_violations.values()) )
+
+# Minimize soft constraints weighted violation
+keys = ideal_violations.keys()
+expr = [ideal_violations[k] for k in keys]
+coef = [weights[k] for k in keys]
+model.Minimize(cp_model.LinearExpr.WeightedSum(expr,coef))
 
 # # Define the objective: makespan
 # makespan = model.NewIntVar(0, horizon, 'makespan')
 # model.AddMaxEquality(makespan, exams)
 # model.Minimize(makespan)
+
 
 # Create a solver and solve the model
 solver = cp_model.CpSolver()

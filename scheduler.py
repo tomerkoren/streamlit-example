@@ -385,7 +385,7 @@ else:
 solution_callback = MySolutionCallback(log)
 status = solver.SolveWithSolutionCallback(model, solution_callback)
 
-log(f'Solver finished in {solver.WallTime()} ms')
+log(f'Solver finished in {solver.WallTime()} s')
 # status = solver.Solve(model)
 
 # determine success & status
@@ -451,15 +451,15 @@ log_sheet.update(range_name=range_name,
 # Write output to 'שיבוץ' worksheet
 output = workbook.worksheet('שיבוץ')
 
-# write timestamp into A1
-message = status_name + '; ' + get_timestamp()
-output.update(range_name='C1',
-              values=[[message]],
-              value_input_option="USER_ENTERED")
+# # write timestamp into A1
+# message = status_name + '; ' + get_timestamp()
+# output.update(range_name='C1',
+#               values=[[message]],
+#               value_input_option="USER_ENTERED")
 
 if success:
     # Clear existing content in the 'Output' worksheet starting from row 4
-    start_row = 4
+    start_row = 3
     end_row = output.row_count
     output.batch_clear([f'B{start_row}:H{end_row}'])
 

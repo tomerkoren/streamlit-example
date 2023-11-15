@@ -93,6 +93,7 @@ debug = args.debug
 # parameters
 warmstart = params['warmstart']
 time_limit_mins = params['time_limit']
+dump_stats = params['stats']
 
 
 #### Authorize and connect to Sheets ####
@@ -448,17 +449,17 @@ log_sheet.update(range_name=range_name,
                  major_dimension='COLUMNS',
                  value_input_option="USER_ENTERED")
 
-# Write output to 'שיבוץ' worksheet
-output = workbook.worksheet('שיבוץ')
-
-# # write timestamp into A1
-# message = status_name + '; ' + get_timestamp()
-# output.update(range_name='C1',
-#               values=[[message]],
-#               value_input_option="USER_ENTERED")
-
 if success:
-    # Clear existing content in the 'Output' worksheet starting from row 4
+    # Write output to 'שיבוץ' worksheet
+    output = workbook.worksheet('שיבוץ')
+
+    # # write timestamp into A1
+    # message = status_name + '; ' + get_timestamp()
+    # output.update(range_name='C1',
+    #               values=[[message]],
+    #               value_input_option="USER_ENTERED")
+
+    # Clear existing content starting from row start_row
     start_row = 3
     end_row = output.row_count
     output.batch_clear([f'B{start_row}:H{end_row}'])
@@ -469,7 +470,8 @@ if success:
     for i, (exam, date) in enumerate(sorted_items):
         date = date.strftime('%d/%m/%Y')
         data.append([exam, date])
-    # output.append_rows(data, value_input_option="USER_ENTERED")
+    
+    # Write data
     output.update(range_name=f'B{start_row}:C{start_row+len(data)-1}',
                   values=data, 
                   value_input_option="USER_ENTERED")
@@ -482,5 +484,35 @@ if success:
     # Dump failed soft constraints into columns E:H
     output.update(range_name=f'E{start_row}:H{start_row+len(failed_list)-1}', 
                   values=failed_list, 
+                  value_input_option="USER_ENTERED")
+    
+if success and dump_stats:
+    # calculate all gaps
+    all_pairs = sorted( set().union(min_days_between_exams.keys(), ideal_days_between_exams.keys()) )
+    
+    data = []
+    for pair in all_pairs:
+        exam1, exam2 = pair
+        name1, name2 = exam_names[exam1], exam_names[exam2]
+        date1, date2 = solution[name1], solution[name2]
+        
+        actual_gap = abs((date1-date2).days)
+        min_days = min_days_between_exams.get(pair,'')
+        ideal_days = ideal_days_between_exams.get(pair,'')
+        ideal_days = '' if ideal_days == 0 else ideal_days
+
+        data.append([name1,name2,min_days,ideal_days,actual_gap])
+
+    # Write output to 'debug' worksheet
+    debug_sheet = workbook.worksheet('stats')
+
+    # Clear existing content starting from row start_row
+    start_row = 3
+    end_row = debug_sheet.row_count
+    debug_sheet.batch_clear([f'B{start_row}:F{end_row}'])
+
+    # Write data
+    debug_sheet.update(range_name=f'B{start_row}:F{start_row+len(data)-1}',
+                  values=data, 
                   value_input_option="USER_ENTERED")
     

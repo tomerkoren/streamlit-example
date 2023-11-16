@@ -58,14 +58,13 @@ class MySolutionCallback(cp_model.CpSolverSolutionCallback):
     def on_solution_callback(self):
         """Called on each new solution."""
         obj = self.ObjectiveValue()
-        self.__logger('Feasible solution #%i found, objective value = %i' % 
-                      (self.__solution_count, obj))
+        bound = self.BestObjectiveBound()
+        self.__logger(f'Feasible solution #{self.__solution_count} found, objective value = {obj}, best bound = {bound}')
         self.__solution_count += 1
 
     def solution_count(self):
         """Returns the number of solutions found."""
         return self.__solution_count
-
 
 
 

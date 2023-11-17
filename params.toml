@@ -1,5 +1,8 @@
 # Time limit to pass to solver (in minutes, zero for no limit)
-time_limit = 5
+time_limit_in_mins = 20
+
+# Additive approximation target (0 == no limit)
+absolute_gap_limit = 10
 
 # Whether to initialize at previously found solution
 warmstart = false

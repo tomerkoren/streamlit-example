@@ -90,8 +90,9 @@ with open(args.params, 'rb') as f:
 debug = args.debug
 
 # parameters
+time_limit_in_mins = params['time_limit_in_mins']
+absolute_gap_limit = params['absolute_gap_limit']
 warmstart = params['warmstart']
-time_limit_mins = params['time_limit']
 dump_stats = params['stats']
 
 
@@ -369,18 +370,17 @@ model.Minimize(cp_model.LinearExpr.WeightedSum(expr,coef))
 
 # Create a solver and solve the model
 solver = cp_model.CpSolver()
-# Set a time limit
-if time_limit_mins > 0:
-    solver.parameters.max_time_in_seconds = time_limit_mins * 60.0
+# Set solver parameters
+if time_limit_in_mins > 0:
+    solver.parameters.max_time_in_seconds = time_limit_in_mins * 60.0
+if absolute_gap_limit > 0:
+    solver.parameters.absolute_gap_limit = absolute_gap_limit
 if debug:
     solver.parameters.log_search_progress = True
     solver.log_callback = print
 
 # Solve!
-if time_limit_mins > 0:
-    log(f'Solving scheduling problem (limiting to {time_limit_mins}m)...')
-else:
-    log(f'Solving scheduling problem (NO time limit)...')
+log(f'Solving scheduling problem (time_limit_in_mins={time_limit_in_mins}, absolute_gap_limit={absolute_gap_limit})...')
 
 solution_callback = MySolutionCallback(log)
 status = solver.SolveWithSolutionCallback(model, solution_callback)

@@ -93,7 +93,8 @@ debug = args.debug
 time_limit_in_mins = params['time_limit_in_mins']
 absolute_gap_limit = params['absolute_gap_limit']
 warmstart = params['warmstart']
-dump_stats = params['stats']
+dump_stats = params['log_stats']
+dump_duplicates = params['log_duplicates']
 
 
 #### Authorize and connect to Sheets ####
@@ -192,7 +193,7 @@ for row_i, row in enumerate(data_rows):
             ideal_days_between_exams[pair] = ideal_days
             weights[pair] = weight
     
-    if duplicates_found:
+    if dump_duplicates and duplicates_found:
         if overriding:
             log(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3} (OVERRIDING)')
         else:
@@ -230,7 +231,7 @@ for row_i, row in enumerate(data_rows):
 
         exam_before_exam.append((exam1, exam2))
     
-    if duplicates_found:
+    if dump_duplicates and duplicates_found:
         log(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}')
 
 # exam_before_date = []
@@ -266,7 +267,7 @@ for row_i, row in enumerate(data_rows):
         
         exam_on_date.append((exam, date))
 
-    if duplicates_found:
+    if dump_duplicates and duplicates_found:
         log(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}')
 
 # Add hints to existing solution if warmstart requested

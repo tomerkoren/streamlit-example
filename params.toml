@@ -1,11 +1,14 @@
 # Time limit to pass to solver (in minutes, zero for no limit)
-time_limit_in_mins = 20
+time_limit_in_mins = 60
 
 # Additive approximation target (0 == no limit)
 absolute_gap_limit = 10
 
 # Whether to initialize at previously found solution
-warmstart = false
+warmstart = true
 
-# Whether to dump solution stats to sheet
-stats = true
+# Whether to log solution stats to sheet
+log_stats = true
+
+# Whether to log duplicating (and possibly overriding) constraints
+log_duplicates = true

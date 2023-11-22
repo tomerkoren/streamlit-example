@@ -2,6 +2,7 @@ import gspread
 from ortools.sat.python import cp_model
 from google.oauth2 import service_account
 import re
+import random
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import argparse
@@ -92,7 +93,7 @@ debug = args.debug
 # parameters
 time_limit_in_mins = params['time_limit_in_mins']
 absolute_gap_limit = params['absolute_gap_limit']
-warmstart = params['warmstart']
+warm_start_prob = params['warm_start_prob']
 dump_stats = params['log_stats']
 dump_duplicates = params['log_duplicates']
 
@@ -272,7 +273,7 @@ for row_i, row in enumerate(data_rows):
 
 # Add hints to existing solution if warmstart requested
 hints = {}
-if warmstart:
+if warm_start_prob > 0:
     sheet_name = 'שיבוץ'
     worksheet = workbook.worksheet(sheet_name)
     data_rows = worksheet.get_all_values()[3:]
@@ -296,11 +297,6 @@ model = cp_model.CpModel()
 
 # Create variables
 exams = [model.NewIntVar(0, horizon-1, f'exam_{i}') for i in range(num_exams)]
-
-# Add hints if warmstart requested
-if warmstart:
-    for (exam_i,date_i) in hints.items():
-        model.AddHint(exams[exam_i],date_i)
 
 # Create intervals for each (exam,days) pair
 gap_intervals = {}
@@ -367,6 +363,25 @@ model.Minimize(cp_model.LinearExpr.WeightedSum(expr,coef))
 # makespan = model.NewIntVar(0, horizon, 'makespan')
 # model.AddMaxEquality(makespan, exams)
 # model.Minimize(makespan)
+
+
+# Add hints if warmstart requested
+if warm_start_prob > 0:
+    for (exam_i,date_i) in hints.items():
+        # include hints at random
+        if random.random() < warm_start_prob:
+            model.AddHint(exams[exam_i], date_i)
+
+    # for (pair,bool_var) in ideal_violations.items():
+    #     exam_i, exam_j = pair
+    #     if exam_i == 0 or exam_j == 0: continue
+
+    #     date_i, date_j = hints[exam_i], hints[exam_j]
+    #     gap = abs(date_i - date_j)
+    #     # min_days = min_days_between_exams.get(pair,'')
+    #     ideal_days = ideal_days_between_exams.get(pair,None)
+    #     if ideal_days:
+    #         model.AddHint(bool_var, gap <= ideal_days)
 
 
 # Create a solver and solve the model

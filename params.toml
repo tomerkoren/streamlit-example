@@ -2,13 +2,13 @@
 time_limit_in_mins = 60
 
 # Additive approximation target (0 == no limit)
-absolute_gap_limit = 10
+absolute_gap_limit = 5
 
-# Whether to initialize at previously found solution
-warmstart = true
+# Probability to initialize variable at previously found solution
+warm_start_prob = 0.5
 
 # Whether to log solution stats to sheet
 log_stats = true
 
 # Whether to log duplicating (and possibly overriding) constraints
-log_duplicates = true
+log_duplicates = false

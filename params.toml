@@ -1,11 +1,11 @@
 # Time limit to pass to solver (in minutes, zero for no limit)
-time_limit_in_mins = 60
+time_limit_in_mins = 15
 
-# Additive approximation target (0 == no limit)
-absolute_gap_limit = 5
+# Additive approximation target (0 == exact)
+absolute_gap_limit = 0
 
 # Probability to initialize variable at previously found solution
-warm_start_prob = 0.5
+warm_start_prob = 0.0
 
 # Whether to log solution stats to sheet
 log_stats = true

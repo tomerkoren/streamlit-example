@@ -252,12 +252,14 @@ exam_on_date = []
 for row_i, row in enumerate(data_rows):
     pattern, date = row[1].strip(), row[2].strip()
     if not (pattern and date): continue
+    
+    date = date_index.get(date)
+    if not date: continue
 
     pattern = preprocess_pattern(pattern)
     matches = get_matching(pattern,exam_names,exam_index)
     if len(matches) == 0:
         log(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches')
-    date = date_index[date]
 
     duplicates_found = False
     for exam in matches: 
@@ -341,7 +343,7 @@ model.AddCumulative(all_intervals, all_demands, max_capacity)
 
 # Add precedence constraints
 for (i,j) in exam_before_exam:
-    model.Add(exams[i] < exams[j])
+    model.Add(exams[i] <= exams[j])
 
 # Add prescheduling constraints
 for (i,t) in exam_on_date:

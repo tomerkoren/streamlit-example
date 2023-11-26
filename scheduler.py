@@ -42,6 +42,10 @@ def get_timestamp():
     timezone = ZoneInfo('Asia/Jerusalem')
     return datetime.now(tz=timezone).strftime("%d-%m-%Y %H:%M:%S")
 
+# identify 'dummy' exams that should be omitted from output
+def omit_from_output(exam_name):
+    return exam_name.startswith('%')
+
 # simple logger
 logger = []
 def log(str):
@@ -281,12 +285,11 @@ if warm_start_prob > 0:
     data_rows = worksheet.get_all_values()[3:]
     for row_i, row in enumerate(data_rows):
         exam, date = row[1].strip(), row[2].strip()
-        if not (exam and date): continue
+        if not exam or not date or not (exam in exam_index) or not (date in date_index): continue
 
         exam_i = exam_index[exam]
         date_i = date_index[date]
         hints[exam_i] = date_i
-
 
 #### Construct scheduling problem ####
 
@@ -298,7 +301,13 @@ horizon = len(dates)
 model = cp_model.CpModel()
 
 # Create variables
-exams = [model.NewIntVar(0, horizon-1, f'exam_{i}') for i in range(num_exams)]
+# exams = [model.NewIntVar(0, horizon-1, f'exam_{i}') for i in range(num_exams)]
+exams = [None] * num_exams
+for (exam_i,date_i) in exam_on_date:
+    exams[exam_i] = date_i
+for date_i in range(num_exams):
+    if exams[date_i] is not None: continue
+    exams[date_i] = model.NewIntVar(0, horizon-1, f'exam_{date_i}')
 
 # Create intervals for each (exam,days) pair
 gap_intervals = {}
@@ -481,14 +490,15 @@ if success:
     end_row = output.row_count
     output.batch_clear([f'B{start_row}:H{end_row}'])
 
-    # dump solution into columns B:C
+    # extract solution
     sorted_items = sorted(solution.items(), key=lambda x: x[1])
     data = []
     for i, (exam, date) in enumerate(sorted_items):
+        if omit_from_output(exam): continue
         date = date.strftime('%d/%m/%Y')
         data.append([exam, date])
     
-    # Write data
+    # Write data into columns B:C
     output.update(range_name=f'B{start_row}:C{start_row+len(data)-1}',
                   values=data, 
                   value_input_option="USER_ENTERED")

@@ -354,9 +354,11 @@ model.AddCumulative(all_intervals, all_demands, max_capacity)
 for (i,j) in exam_before_exam:
     model.Add(exams[i] <= exams[j])
 
-# Add prescheduling constraints
-for (i,t) in exam_on_date:
-    model.Add(exams[i] == t)
+# # Add prescheduling constraints
+# for (i,t) in exam_on_date:
+#     model.Add(exams[i] == t)
+
+
 
 
 # Define the objective

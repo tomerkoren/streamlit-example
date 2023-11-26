@@ -7,6 +7,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import argparse
 import tomllib
+import csv
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
@@ -46,6 +47,75 @@ def get_timestamp():
 def omit_from_output(exam_name):
     return exam_name.startswith('%')
 
+
+
+def extract_solution_from_solver(solver, exam_vars, exam_names, dates):
+    # dump solution into a dictionary
+    solution = {}
+    for i in range(num_exams):
+        exam = exam_names[i]
+        if omit_from_output(exam): continue
+        date = dates[solver.Value(exam_vars[i])]
+        solution[exam] = datetime.strptime(date, '%d/%m/%Y').date()
+    
+    return solution
+
+# dump failed soft constraints into a list
+def extract_violations_from_solver(solver, bool_vars_dict, exam_vars,
+                                exam_names, requested_gaps):
+    violations = []
+    for (i,j),b in bool_vars_dict.items():
+        if solver.Value(b):
+            requested = requested_gaps[(i,j)]
+            actual = abs(solver.Value(exam_vars[i]) - solver.Value(exam_vars[j]))
+            violations.append((exam_names[i],exam_names[j],requested,actual))
+    
+    return violations
+
+def write_solution_to_csv(fname, solution):
+    # prepare solution
+    sorted_items = sorted(solution.items(), key=lambda x: x[1])
+    data = []
+    for i, (exam, date) in enumerate(sorted_items):
+        date = date.strftime('%d/%m/%Y')
+        data.append([exam, date])
+
+    with open(fname, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(data)
+
+
+def write_solution_to_gsheet(worksheet, solution, violations):
+    # prepare solution
+    sorted_items = sorted(solution.items(), key=lambda x: x[1])
+    data = []
+    for i, (exam, date) in enumerate(sorted_items):
+        date = date.strftime('%d/%m/%Y')
+        data.append([exam, date])
+
+    # Clear existing content starting from row start_row
+    start_row = 3
+    end_row = worksheet.row_count
+    worksheet.batch_clear([f'B{start_row}:H{end_row}'])
+    
+    # Write data into columns B:C
+    range_name = f'B{start_row}:C{start_row+len(data)-1}'
+    worksheet.update(range_name=range_name,
+                  values=data, 
+                  value_input_option="USER_ENTERED")
+    
+    # Style dates in column C
+    date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
+    range_name = f'C{start_row}:C{start_row+len(data)-1}'  # Range excluding header row
+    worksheet.format(range_name, date_format)
+
+    # Dump failed soft constraints into columns E:H
+    range_name = f'E{start_row}:H{start_row+len(violations)-1}'
+    worksheet.update(range_name=range_name, 
+                    values=violations, 
+                    value_input_option="USER_ENTERED")
+
+
 # simple logger
 logger = []
 def log(str):
@@ -55,8 +125,13 @@ def log(str):
 
 # Solver callback
 class MySolutionCallback(cp_model.CpSolverSolutionCallback):
-    def __init__(self, log_func):
+    def __init__(self, exam_vars, exam_names, dates, log_func):
         cp_model.CpSolverSolutionCallback.__init__(self)
+        
+        self.__exam_vars = exam_vars
+        self.__exam_names = exam_names
+        self.__dates = dates
+        
         self.__solution_count = 1
         self.__logger = log_func
 
@@ -67,10 +142,13 @@ class MySolutionCallback(cp_model.CpSolverSolutionCallback):
         self.__logger(f'Feasible solution #{self.__solution_count} found, objective value = {obj}, best bound = {bound}')
         self.__solution_count += 1
 
+        # save solution locally
+        solution = extract_solution_from_solver(self, self.__exam_vars, self.__exam_names, self.__dates)
+        write_solution_to_csv('schedule.csv', solution)
+
     def solution_count(self):
         """Returns the number of solutions found."""
         return self.__solution_count
-
 
 
 ### Read args
@@ -411,7 +489,7 @@ if debug:
 # Solve!
 log(f'Solving scheduling problem (time_limit_in_mins={time_limit_in_mins}, absolute_gap_limit={absolute_gap_limit})...')
 
-solution_callback = MySolutionCallback(log)
+solution_callback = MySolutionCallback(exams, exam_names, dates, log)
 status = solver.SolveWithSolutionCallback(model, solution_callback)
 
 log(f'Solver finished in {solver.WallTime()} s')
@@ -421,46 +499,6 @@ log(f'Solver finished in {solver.WallTime()} s')
 success = (status in [cp_model.OPTIMAL, cp_model.FEASIBLE])
 status_name = solver.StatusName(status)
 log(f'Solver status: {status_name}')
-
-# if status == cp_model.OPTIMAL:
-#     status_name = 'OPTIMAL'
-# elif status == cp_model.FEASIBLE:
-#     status_name = 'FEASIBLE'
-# elif status == cp_model.INFEASIBLE:
-#     status_name = 'INFEASIBLE'
-# else: #cp_model.UNKNOWN
-#     status_name = 'TIMEOUT'
-
-# Complete progressbar
-# st.session_state["counter"] = 1.0
-
-if success:
-    # Solution found!
-    # log(f'{status_name} solution found')
-
-    # dump solution into a dictionary
-    solution = {}
-    for i in range(num_exams):
-        exam = exam_names[i]
-        date = dates[solver.Value(exams[i])]
-        date = datetime.strptime(date, '%d/%m/%Y').date()
-        solution[exam] = date
-
-    # dump failed soft constraints into a list
-    failed_list = []
-    for (i,j),b in ideal_violations.items():
-        if solver.Value(b):
-            requested = ideal_days_between_exams[(i,j)]
-            actual = abs(solver.Value(exams[i]) - solver.Value(exams[j]))
-            failed_list.append((exam_names[i],exam_names[j],requested,actual))
-
-    # if len(failed_list)>0:
-        # log(f'Some requested gap constraints could not be satisfied (see output sheet)')
-    
-# elif status == cp_model.INFEASIBLE:
-    # log('The scheduling problem was proven infeasible :( Try relaxing some hard constraints.')
-# else: # status == cp_model.UNKNOWN
-    # log('No solution found within time limit :( Try increasing the limit.')
 
 
 #### Save solution to the Google Sheet ####
@@ -478,43 +516,18 @@ log_sheet.update(range_name=range_name,
                  value_input_option="USER_ENTERED")
 
 if success:
+    # extract solution
+    solution = extract_solution_from_solver(solver,exams,exam_names,dates)
+    failed_list = extract_violations_from_solver(solver, ideal_violations, exams, exam_names, ideal_days_between_exams)
+
+    # Write/backup solution to local csv file
+    write_solution_to_csv('schedule.csv', solution)
+
     # Write output to 'שיבוץ' worksheet
     output = workbook.worksheet('שיבוץ')
+    write_solution_to_gsheet(output, solution, failed_list)
 
-    # # write timestamp into A1
-    # message = status_name + '; ' + get_timestamp()
-    # output.update(range_name='C1',
-    #               values=[[message]],
-    #               value_input_option="USER_ENTERED")
 
-    # Clear existing content starting from row start_row
-    start_row = 3
-    end_row = output.row_count
-    output.batch_clear([f'B{start_row}:H{end_row}'])
-
-    # extract solution
-    sorted_items = sorted(solution.items(), key=lambda x: x[1])
-    data = []
-    for i, (exam, date) in enumerate(sorted_items):
-        if omit_from_output(exam): continue
-        date = date.strftime('%d/%m/%Y')
-        data.append([exam, date])
-    
-    # Write data into columns B:C
-    output.update(range_name=f'B{start_row}:C{start_row+len(data)-1}',
-                  values=data, 
-                  value_input_option="USER_ENTERED")
-    
-    # Style dates in column C
-    date_format = {'numberFormat': {'type': 'DATE', 'pattern': 'dd/mm/yyyy'}}
-    date_range = f'C{start_row}:C{start_row+len(sorted_items)-1}'  # Range excluding header row
-    output.format(date_range, date_format)
-
-    # Dump failed soft constraints into columns E:H
-    output.update(range_name=f'E{start_row}:H{start_row+len(failed_list)-1}', 
-                  values=failed_list, 
-                  value_input_option="USER_ENTERED")
-    
 if success and dump_stats:
     # calculate all gaps
     all_pairs = sorted( set().union(min_days_between_exams.keys(), ideal_days_between_exams.keys()) )
@@ -523,7 +536,8 @@ if success and dump_stats:
     for pair in all_pairs:
         exam1, exam2 = pair
         name1, name2 = exam_names[exam1], exam_names[exam2]
-        date1, date2 = solution[name1], solution[name2]
+        date1, date2 = solution.get(name1), solution.get(name2)
+        if date1 is None or date2 is None: continue
         
         actual_gap = abs((date1-date2).days)
         min_days = min_days_between_exams.get(pair,'')

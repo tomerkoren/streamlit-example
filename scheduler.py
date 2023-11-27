@@ -336,12 +336,15 @@ for row_i, row in enumerate(data_rows):
     if not (pattern and date): continue
     
     date = date_index.get(date)
-    if not date: continue
+    if not date:
+        log(f'Invalid date in {sheet_name}, row {row_i+3}')
+        continue
 
     pattern = preprocess_pattern(pattern)
     matches = get_matching(pattern,exam_names,exam_index)
     if len(matches) == 0:
         log(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches')
+        continue
 
     duplicates_found = False
     for exam in matches: 

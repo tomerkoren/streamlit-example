@@ -330,7 +330,7 @@ sheet_name = 'קיבועים'
 worksheet = workbook.worksheet(sheet_name)
 data_rows = worksheet.get_all_values()[2:]
 
-exam_on_date = []
+exam_on_date = {}
 for row_i, row in enumerate(data_rows):
     pattern, date = row[1].strip(), row[2].strip()
     if not (pattern and date): continue
@@ -349,11 +349,8 @@ for row_i, row in enumerate(data_rows):
     duplicates_found = False
     for exam in matches: 
         # detect duplicates
-        if (exam, date) in exam_on_date:
-            duplicates_found = True
-            exam_on_date.remove((exam, date))
-        
-        exam_on_date.append((exam, date))
+        if exam in exam_on_date: duplicates_found = True
+        exam_on_date[exam] = date
 
     if dump_duplicates and duplicates_found:
         log(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}')
@@ -384,7 +381,7 @@ model = cp_model.CpModel()
 # Create variables
 # exams = [model.NewIntVar(0, horizon-1, f'exam_{i}') for i in range(num_exams)]
 exams = [None] * num_exams
-for (exam_i,date_i) in exam_on_date:
+for (exam_i,date_i) in exam_on_date.items():
     exams[exam_i] = date_i
 for date_i in range(num_exams):
     if exams[date_i] is not None: continue
@@ -436,7 +433,7 @@ for (i,j) in exam_before_exam:
     model.Add(exams[i] <= exams[j])
 
 # # Add prescheduling constraints
-# for (i,t) in exam_on_date:
+# for (i,t) in exam_on_date.items():
 #     model.Add(exams[i] == t)
 
 
@@ -463,7 +460,7 @@ model.Minimize(cp_model.LinearExpr.WeightedSum(expr,coef))
 if warm_start_prob > 0:
     for (exam_i,date_i) in hints.items():
         # include hints at random
-        if random.random() < warm_start_prob:
+        if not (exam_i in exam_on_date) and random.random() < warm_start_prob:
             model.AddHint(exams[exam_i], date_i)
 
     # for (pair,bool_var) in ideal_violations.items():

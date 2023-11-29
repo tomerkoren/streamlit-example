@@ -539,12 +539,14 @@ if success and dump_stats:
         date1, date2 = solution.get(name1), solution.get(name2)
         if date1 is None or date2 is None: continue
         
-        actual_gap = abs((date1-date2).days)
+        # actual_gap = abs((date1-date2).days)
         min_days = min_days_between_exams.get(pair,'')
         ideal_days = ideal_days_between_exams.get(pair,'')
         ideal_days = '' if ideal_days == 0 else ideal_days
 
-        data.append([name1,name2,min_days,ideal_days,actual_gap])
+        # actual gap will be computed by the spreadsheet
+        # data.append([name1,name2,min_days,ideal_days,actual_gap])
+        data.append([name1,name2,min_days,ideal_days])
 
     # Write output to 'debug' worksheet
     debug_sheet = workbook.worksheet('stats')
@@ -552,10 +554,10 @@ if success and dump_stats:
     # Clear existing content starting from row start_row
     start_row = 3
     end_row = debug_sheet.row_count
-    debug_sheet.batch_clear([f'B{start_row}:F{end_row}'])
+    debug_sheet.batch_clear([f'B{start_row}:E{end_row}'])
 
     # Write data
-    debug_sheet.update(range_name=f'B{start_row}:F{start_row+len(data)-1}',
+    debug_sheet.update(range_name=f'B{start_row}:E{start_row+len(data)-1}',
                   values=data, 
                   value_input_option="USER_ENTERED")
     

@@ -195,23 +195,28 @@ sheet_url = secrets["private_gsheets_url"]
 workbook = gc.open_by_url(sheet_url)
 
 # Extract exams
-worksheet = workbook.worksheet('בחינות')
+sheet_name = 'בחינות'
+worksheet = workbook.worksheet(sheet_name)
 data_rows = worksheet.get_all_values()[2:]
 
 exam_names = []
 exam_demands = []
 exam_index = {}
-for row in data_rows:
+for row_i, row in enumerate(data_rows):
     name, demand = row[1].strip(), row[2].strip()
     name = preprocess_name(name)
     if name:
+        if name in exam_index:
+            log(f'Name clash in {sheet_name}, row {row_i+3}')
+
         exam_index[name] = len(exam_names)
         demand = int(demand)
         exam_names.append(name)
         exam_demands.append(demand)
 
 # Extract dates
-worksheet = workbook.worksheet('תאריכים')
+sheet_name = 'תאריכים'
+worksheet = workbook.worksheet(sheet_name)
 data_rows = worksheet.get_all_values()[2:]
 
 dates = []

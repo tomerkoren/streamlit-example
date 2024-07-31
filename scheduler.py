@@ -230,6 +230,51 @@ for row_i, row in enumerate(data_rows):
         dates.append(date)
         dates_capacity.append(capacity)
 
+
+# Extract prescheduled constraints
+sheet_name = 'קיבועים'
+worksheet = workbook.worksheet(sheet_name)
+data_rows = worksheet.get_all_values()[2:]
+
+exam_on_date = {}
+for row_i, row in enumerate(data_rows):
+    name, date = row[1].strip(), row[2].strip()
+    if not (name and date): continue
+    
+    date = date_index.get(date)
+    if not date:
+        log(f'Invalid date in {sheet_name}, row {row_i+3}')
+        continue
+
+    name = preprocess_name(name)
+    if name:
+        if name not in exam_index:  
+            # allow defining new events in this table
+            exam_index[name] = len(exam_names)
+            exam_names.append(name)
+            # events defined here should have zero demand
+            exam_demands.append(0)
+
+        exam = exam_index.get(name)
+        exam_on_date[exam] = date
+
+    # pattern = preprocess_pattern(pattern)
+    # matches = get_matching(pattern,exam_names,exam_index)
+    # if len(matches) == 0:
+    #     log(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches')
+    #     continue
+
+    # duplicates_found = False
+    # for exam in matches: 
+    #     # detect duplicates
+    #     if exam in exam_on_date: duplicates_found = True
+    #     exam_on_date[exam] = date
+
+    # if dump_duplicates and duplicates_found:
+        # log(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}')
+
+
+
 # Extract minimal and ideal gap constraints
 sheet_name = 'מרווחים'
 worksheet = workbook.worksheet(sheet_name)
@@ -329,36 +374,6 @@ for row_i, row in enumerate(data_rows):
 #         exam = exam_index[exam]
 #         date = date_index[date]
 #         exam_before_date.append((exam, date))
-
-# Extract prescheduled constraints
-sheet_name = 'קיבועים'
-worksheet = workbook.worksheet(sheet_name)
-data_rows = worksheet.get_all_values()[2:]
-
-exam_on_date = {}
-for row_i, row in enumerate(data_rows):
-    pattern, date = row[1].strip(), row[2].strip()
-    if not (pattern and date): continue
-    
-    date = date_index.get(date)
-    if not date:
-        log(f'Invalid date in {sheet_name}, row {row_i+3}')
-        continue
-
-    pattern = preprocess_pattern(pattern)
-    matches = get_matching(pattern,exam_names,exam_index)
-    if len(matches) == 0:
-        log(f'Constraint in sheet {sheet_name}, row {row_i+3} yielded 0 matches')
-        continue
-
-    duplicates_found = False
-    for exam in matches: 
-        # detect duplicates
-        if exam in exam_on_date: duplicates_found = True
-        exam_on_date[exam] = date
-
-    if dump_duplicates and duplicates_found:
-        log(f'Duplicate constraint(s) detected in {sheet_name}, row {row_i+3}')
 
 # Add hints to existing solution if warmstart requested
 hints = {}
